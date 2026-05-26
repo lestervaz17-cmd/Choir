@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Choir Portal - Multi-Week Planner</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-color: #e0e0e0;
+            --accent-color: #2196F3;
+            --admin-color: #4caf50;
+            --library-color: #9c27b0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+        }
+        .container { width: 100%; max-width: 600px; }
+        .hidden { display: none !important; }
+        
+        .box {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            margin-bottom: 20px;
+        }
+        
+        input, textarea, select, button {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 6px;
+            border: 1px solid #333;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        input, textarea, select { background: #2a2a2a; color: white; }
+        textarea { height: 100px; resize: vertical; }
+        
+        button { background: var(--accent-color); color: white; font-weight: bold; cursor: pointer; border: none;}
+        .btn-admin { background: var(--admin-color); }
+        .btn-library { background: var(--library-color); }
+        .btn-secondary { background: #555; }
+        
+        .hymn-card {
+            background: var(--card-bg);
+            margin: 12px 0;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid var(--accent-color);
+            cursor: pointer;
+        }
+        .hymn-card.lib-card { border-left-color: var(--library-color); }
+        .hymn-section { font-size: 11px; text-transform: uppercase; color: #888; letter-spacing: 1px; }
+        .hymn-title { font-size: 18px; font-weight: bold; margin: 5px 0; color: #fff; }
+        .lyrics { margin-top: 10px; white-space: pre-line; color: #ccc; line-height: 1.6; font-size: 17px; display: none; }
+        .active .lyrics { display: block; }
+        
+        .nav-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .form-group { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #333; }
+        
+        .tab-buttons { display: flex; gap: 10px; margin-bottom: 15px; }
+        .tab-buttons button { margin: 0; padding: 10px; font-size: 14px; }
+        
+        .week-toggle { display: flex; gap: 5px; margin-bottom: 15px; background: #222; padding: 5px; border-radius: 8px; }
+        .week-toggle button { margin: 0; padding: 8px; font-size: 13px; }
+        .active-toggle { background: #444 !important; border: 1px solid #666; }
+        
+        .search-bar { background: #2a2a2a; border: 1px solid #333; color: white; padding: 10px; border-radius: 6px; margin-bottom: 15px; width: 100%; box-sizing: border-box; font-size: 16px;}
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <div id="login-screen" class="box" style="margin-top: 80px; text-align: center;">
+            <h2>Choir App Portal</h2>
+            <p>Enter your access password:</p>
+            <input type="password" id="password-input" placeholder="Enter password...">
+            <button onclick="handleLogin()">Enter Dashboard</button>
+            <p id="error-msg" style="color: #ff5252;" class="hidden">Invalid credentials. Try again.</p>
+        </div>
+
+        <div id="member-dashboard" class="hidden">
+            <div class="nav-header">
+                <h2>Choir Portal</h2>
+                <button onclick="logout()" class="btn-secondary" style="width: auto; margin: 0; padding: 6px 12px; font-size: 14px;">Exit</button>
+            </div>
+
+            <div class="tab-buttons">
+                <button id="btn-mem-sunday" onclick="switchMemberTab('sunday')" class="btn-admin">📅 Sunday Setlists</button>
+                <button id="btn-mem-lib" onclick="switchMemberTab('library')" class="btn-secondary">🎵 Full Song Library</button>
+            </div>
+
+            <div id="tab-member-sunday">
+                <div class="week-toggle">
+                    <button id="btn-mem-week1" onclick="switchMemberWeek('week1')" class="active-toggle">Current Week</button>
+                    <button id="btn-mem-week2" onclick="switchMemberWeek('week2')">Next Week</button>
+                </div>
+                <h3 id="view-date" style="color: var(--accent-color); margin-bottom: 10px;">Loading Date...</h3>
+                <div id="setlist-render-area"></div>
+            </div>
+
+            <div id="tab-member-library" class="hidden">
+                <h3>Master Hymn Database</h3>
+                <input type="text" id="member-search" class="search-bar" placeholder="🔍 Search hymns by title..." oninput="filterMemberLibrary()">
+                <div id="member-library-render-area"></div>
+            </div>
+        </div>
+
+        <div id="admin-dashboard" class="hidden">
+            <div class="nav-header">
+                <h2>Admin Control Center</h2>
+                <button onclick="logout()" class="btn-secondary" style="width: auto; margin: 0; padding: 6px 12px; font-size: 14px;">Exit Admin</button>
+            </div>
+
+            <div class="tab-buttons">
+                <button id="btn-adm-sunday" onclick="switchAdminTab('setlist')" class="btn-admin">1. Plan Sunday</button>
+                <button id="btn-adm-lib" onclick="switchAdminTab('library')" class="btn-secondary">2. Manage Song Library</button>
+            </div>
+            
+            <div id="tab-sunday-planner">
+                <div class="week-toggle">
+                    <button id="btn-adm-week1" onclick="switchAdminWeek('week1')" class="active-toggle">Edit Current Week</button>
+                    <button id="btn-adm-week2" onclick="switchAdminWeek('week2')">Edit Next Week</button>
+                </div>
+
+                <div class="box">
+                    <label>Target Sunday Date:</label>
+                    <input type="text" id="edit-date" placeholder="e.g., Sunday, May 31, 2026">
+                </div>
+
+                <div class="box">
+                    <h3>Configure Liturgical Layout</h3>
+                    <div id="admin-form-fields"></div>
+                </div>
+
+                <button onclick="saveAdminData()" class="btn-admin">Publish Selected Sunday Setlist</button>
+            </div>
+
+            <div id="tab-library-manager" class="hidden">
+                <div class="box">
+                    <h3>Add New Song to Library</h3>
+                    <label>Song Title:</label>
+                    <input type="text" id="lib-new-title" placeholder="e.g., Amazing Grace">
+                    
+                    <label>Liturgical Category:</label>
+                    <select id="lib-new-category"></select>
+                    
+                    <label>Song Lyrics:</label>
+                    <textarea id="lib-new-lyrics" placeholder="Paste entire song lyrics here..."></textarea>
+                    <button onclick="addNewSongToLibrary()" class="btn-library">Save Song to Library</button>
+                </div>
+
+                <div class="box">
+                    <h3>Your Saved Songs Master List</h3>
+                    <div id="library-preview-list" style="max-height: 250px; overflow-y: auto; font-size: 14px;"></div>
+                </div>
+            </div>
+
+            <button onclick="exportDataData()" class="btn-secondary" style="margin-top: 20px;">Copy System Backup Code</button>
+        </div>
+
+    </div>
+
+    <script>
+        const MEMBER_KEY = "Choir2026";
+        const ADMIN_KEY = "Admin2026";
+
+        const sectionsList = [
+            "Entrance", "Lord have mercy", "Gloria", "Responsorial Psalms", 
+            "Acclamation", "Offertry", "Holy Holy", "The Mystery of Faith", 
+            "Communion", "Recessional"
+        ];
+
+        const defaultLibrary = [
+            { title: "Amazing Grace", category: "Entrance", lyrics: "Amazing grace! How sweet the sound\nThat saved a wretch like me!" },
+            { title: "Kyrie Eleison", category: "Lord have mercy", lyrics: "Lord have mercy.\nChrist have mercy." },
+            { title: "All Glory to God", category: "Gloria", lyrics: "Glory to God in the highest." },
+            { title: "Take My Life", category: "Recessional", lyrics: "Take my life and let it be\nConsecrated, Lord, to Thee." }
+        ];
+
+        // Create empty templates for both schedules
+        const blankWeek1 = { date: "Current Sunday", hymns: sectionsList.map(sec => ({ section: sec, title: "", lyrics: "" })) };
+        const blankWeek2 = { date: "Next Sunday", hymns: sectionsList.map(sec => ({ section: sec, title: "", lyrics: "" })) };
+
+        // System state container
+        let masterLibrary = JSON.parse(localStorage.getItem('choirLibrary')) || defaultLibrary;
+        let week1Data = JSON.parse(localStorage.getItem('choirWeek1')) || blankWeek1;
+        let week2Data = JSON.parse(localStorage.getItem('choirWeek2')) || blankWeek2;
+
+        // Dynamic view track variables
+        let activeMemberWeek = "week1";
+        let activeAdminWeek = "week1";
+
+        function handleLogin() {
+            const pin = document.getElementById('password-input').value.trim();
+            document.getElementById('error-msg').classList.add('hidden');
+
+            if (pin === ADMIN_KEY) {
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('admin-dashboard').classList.remove('hidden');
+                setupCategoryDropdown();
+                switchAdminTab('setlist');
+            } else if (pin === MEMBER_KEY) {
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('member-dashboard').classList.remove('hidden');
+                switchMemberTab('sunday');
+            } else {
+                document.getElementById('error-msg').classList.remove('hidden');
+            }
+        }
+
+        // MEMBER VIEW SYSTEM RULES
+        function switchMemberTab(tab) {
+            const btnSunday = document.getElementById('btn-mem-sunday');
+            const btnLib = document.getElementById('btn-mem-lib');
+            
+            if (tab === 'sunday') {
+                document.getElementById('tab-member-sunday').classList.remove('hidden');
+                document.getElementById('tab-member-library').classList.add('hidden');
+                btnSunday.className = "btn-admin";
+                btnLib.className = "btn-secondary";
+                renderMemberSetlist();
+            } else {
+                document.getElementById('tab-member-sunday').classList.add('hidden');
+                document.getElementById('tab-member-library').classList.remove('hidden');
+                btnSunday.className = "btn-secondary";
+                btnLib.className = "btn-library";
+                document.getElementById('member-search').value = "";
+                renderMemberLibrary(masterLibrary);
+            }
+        }
+
+        function switchMemberWeek(weekKey) {
+            activeMemberWeek = weekKey;
+            document.getElementById('btn-mem-week1').className = (weekKey === 'week1') ? "active-toggle" : "";
+            document.getElementById('btn-mem-week2').className = (weekKey === 'week2') ? "active-toggle" : "";
+            renderMemberSetlist();
+        }
+
+        function renderMemberSetlist() {
+            const currentWorkingWeek = (activeMemberWeek === 'week1') ? week1Data : week2Data;
+            document.getElementById('view-date').innerText = currentWorkingWeek.date;
+            
+            const container = document.getElementById('setlist-render-area');
+            container.innerHTML = "";
+
+            currentWorkingWeek.hymns.forEach(hymn => {
+                if (hymn.title && hymn.title !== "") {
+                    const card = document.createElement('div');
+                    card.className = "hymn-card";
+                    card.onclick = function() { this.classList.toggle('active'); };
+                    card.innerHTML = `
+                        <div class="hymn-section">${hymn.section}</div>
+                        <div class="hymn-title">${hymn.title}</div>
+                        <div class="lyrics">${hymn.lyrics || 'No lyrics provided.'}</div>
+                    `;
+                    container.appendChild(card);
+                }
+            });
+        }
+
+        function renderMemberLibrary(songsToDisplay) {
+            const container = document.getElementById('member-library-render-area');
+            container.innerHTML = "";
+            if (songsToDisplay.length === 0) {
+                container.innerHTML = `<p style="text-align:center; color:#888;">No matching songs found.</p>`;
+                return;
+            }
+            const sortedSongs = [...songsToDisplay].sort((a,b) => a.title.localeCompare(b.title));
+            sortedSongs.forEach(song => {
+                const card = document.createElement('div');
+                card.className = "hymn-card lib-card";
+                card.onclick = function() { this.classList.toggle('active'); };
+                card.innerHTML = `
+                    <div class="hymn-section" style="color: var(--library-color);">${song.category}</div>
+                    <div class="hymn-title">${song.title}</div>
+                    <div class="lyrics">${song.lyrics}</div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function filterMemberLibrary() {
+            const query = document.getElementById('member-search').value.toLowerCase().trim();
+            const filtered = masterLibrary.filter(song => song.title.toLowerCase().includes(query));
+            renderMemberLibrary(filtered);
+        }
+
+        // ADMIN CONFIG WORKSPACE MANAGEMENT
+        function switchAdminWeek(weekKey) {
+            activeAdminWeek = weekKey;
+            document.getElementById('btn-adm-week1').className = (weekKey === 'week1') ? "active-toggle" : "";
+            document.getElementById('btn-adm-week2').className = (weekKey === 'week2') ? "active-toggle" : "";
+            generateAdminForm();
+        }
+
+        function setupCategoryDropdown() {
+            const dropdown = document.getElementById('lib-new-category');
+            dropdown.innerHTML = sectionsList.map(sec => `<option value="${sec}">${sec}</option>`).join('');
+        }
+
+        function switchAdminTab(tabName) {
+            const btnSunday = document.getElementById('btn-adm-sunday');
+            const btnLib = document.getElementById('btn-adm-lib');
+
+            if (tabName === 'setlist') {
+                document.getElementById('tab-sunday-planner').classList.remove('hidden');
+                document.getElementById('tab-library-manager').classList.add('hidden');
+                btnSunday.className = "btn-admin";
+                btnLib.className = "btn-secondary";
+                generateAdminForm();
+            } else {
+                document.getElementById('tab-sunday-planner').classList.add('hidden');
+                document.getElementById('tab-library-manager').classList.remove('hidden');
+                btnSunday.className = "btn-secondary";
+                btnLib.className = "btn-library";
+                renderLibraryPreview();
+            }
+        }
+
+        function generateAdminForm() {
+            const targetWeekData = (activeAdminWeek === 'week1') ? week1Data : week2Data;
+            document.getElementById('edit-date').value = targetWeekData.date;
+            
+            const formContainer = document.getElementById('admin-form-fields');
+            formContainer.innerHTML = "";
+
+            sectionsList.forEach((section, index) => {
+                const group = document.createElement('div');
+                group.className = "form-group";
+                
+                const filteredSongs = masterLibrary.filter(song => song.category === section);
+
+                let optionsHtml = `<option value="">-- Skip Section --</option>`;
+                filteredSongs.forEach(song => {
+                    const selectedStr = (targetWeekData.hymns[index] && targetWeekData.hymns[index].title === song.title) ? "selected" : "";
+                    optionsHtml += `<option value="${song.title}" ${selectedStr}>${song.title}</option>`;
+                });
+
+                group.innerHTML = `
+                    <label style="font-weight: bold; color: var(--accent-color);">${index + 1}. ${section}:</label>
+                    <select id="select-${index}">${optionsHtml}</select>
+                `;
+                formContainer.appendChild(group);
+            });
+        }
+
+        function addNewSongToLibrary() {
+            const titleInput = document.getElementById('lib-new-title').value.trim();
+            const categoryInput = document.getElementById('lib-new-category').value;
+            const lyricsInput = document.getElementById('lib-new-lyrics').value.trim();
+
+            if (!titleInput || !lyricsInput) {
+                alert("Please fill out both the song title and its lyrics!");
+                return;
+            }
+
+            masterLibrary.push({ title: titleInput, category: categoryInput, lyrics: lyricsInput });
+            localStorage.setItem('choirLibrary', JSON.stringify(masterLibrary));
+            
+            document.getElementById('lib-new-title').value = "";
+            document.getElementById('lib-new-lyrics').value = "";
+            
+            alert(`"${titleInput}" saved into master library!`);
+            renderLibraryPreview();
+        }
+
+        function renderLibraryPreview() {
+            const container = document.getElementById('library-preview-list');
+            container.innerHTML = masterLibrary.map((song, i) => `
+                <div style="padding: 8px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center;">
+                    <span>🎵 <b>${song.title}</b></span>
+                    <span style="background: #333; color: var(--library-color); font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: bold;">${song.category}</span>
+                </div>
+            `).join('');
+        }
+
+        function saveAdminData() {
+            const targetWeekData = (activeAdminWeek === 'week1') ? week1Data : week2Data;
+            targetWeekData.date = document.getElementById('edit-date').value;
+            
+            sectionsList.forEach((section, index) => {
+                const selectedTitle = document.getElementById(`select-${index}`).value;
+                const matchedSong = masterLibrary.find(s => s.title === selectedTitle);
+                
+                targetWeekData.hymns[index] = {
+                    section: section,
+                    title: selectedTitle,
+                    lyrics: matchedSong ? matchedSong.lyrics : ""
+                };
+            });
+
+            if (activeAdminWeek === 'week1') {
+                localStorage.setItem('choirWeek1', JSON.stringify(week1Data));
+            } else {
+                localStorage.setItem('choirWeek2', JSON.stringify(week2Data));
+            }
+            alert(`Setlist for ${activeAdminWeek === 'week1' ? 'Current Week' : 'Next Week'} updated successfully!`);
+        }
+
+        function exportDataData() {
+            const packageData = { library: masterLibrary, week1: week1Data, week2: week2Data };
+            navigator.clipboard.writeText(JSON.stringify(packageData));
+            alert("System backup code copied! Paste this into your GitHub file to update your team.");
+        }
+
+        function logout() {
+            document.getElementById('password-input').value = "";
+            document.getElementById('admin-dashboard').classList.add('hidden');
+            document.getElementById('member-dashboard').classList.add('hidden');
+            document.getElementById('login-screen').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
