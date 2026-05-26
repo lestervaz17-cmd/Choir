@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Choir Portal - Realtime Cloud</title>
+    <title>Choir Portal - Complete Search & Filter Hub</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -81,6 +81,10 @@
         .search-bar { background: #2a2a2a; border: 1px solid #333; color: white; padding: 10px; border-radius: 6px; margin-bottom: 15px; width: 100%; box-sizing: border-box; font-size: 16px;}
         .lib-item { padding: 10px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
         .lib-actions { display: flex; align-items: center; }
+        
+        /* New side-by-side alignment formatting for the search row tools */
+        .filter-row { display: flex; gap: 10px; margin-bottom: 15px; }
+        .filter-row input, .filter-row select { margin: 0; }
     </style>
 </head>
 <body>
@@ -173,7 +177,14 @@
 
                 <div class="box">
                     <h3>Your Saved Songs Master List</h3>
-                    <div id="library-preview-list" style="max-height: 300px; overflow-y: auto; font-size: 14px;"></div>
+                    
+                    <div class="filter-row">
+                        <input type="text" id="admin-search" placeholder="🔍 Search by title..." oninput="filterAndRenderAdminLibrary()">
+                        <select id="admin-filter-category" onchange="filterAndRenderAdminLibrary()">
+                            </select>
+                    </div>
+
+                    <div id="library-preview-list" style="max-height: 350px; overflow-y: auto; font-size: 14px;"></div>
                 </div>
             </div>
         </div>
@@ -181,11 +192,9 @@
     </div>
 
     <script>
-        // Setup configuration parameters using distinct aliases
         const CLOUD_URL = "https://oighotwtvrzyiqslpeso.supabase.co";
         const CLOUD_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pZ2hvdHd0dnJ6eWlxc2xwZXNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3NzAzNzIsImV4cCI6MjA5NTM0NjM3Mn0.t3zZqp_KSN3jwme7OSfA8SyGNDiEAWlETXeCxSxGt44";
         
-        // We call our variable 'db' instead of 'supabase' to completely avoid collision crashes!
         const db = window.supabase.createClient(CLOUD_URL, CLOUD_KEY);
 
         const MEMBER_KEY = "Choir2026";
@@ -208,13 +217,16 @@
         async function initializeCloudConnection() {
             await fetchAllCloudData();
             
-            // Listen live via the renamed database channel framework
             db.channel('cloud-sync')
                 .on('postgres_changes', { event: '*', schema: 'public' }, async () => {
                     await fetchAllCloudData();
                     if (!document.getElementById('member-dashboard').classList.contains('hidden')) {
                         if (activeMemberWeek) renderMemberSetlist();
                         else filterMemberLibrary();
+                    } else if (!document.getElementById('admin-dashboard').classList.contains('hidden')) {
+                        if (document.getElementById('tab-library-manager').classList.contains('hidden') === false) {
+                            filterAndRenderAdminLibrary();
+                        }
                     }
                 })
                 .subscribe();
@@ -240,7 +252,7 @@
             if (pin === ADMIN_KEY) {
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('admin-dashboard').classList.remove('hidden');
-                setupCategoryDropdown();
+                setupCategoryDropdowns();
                 switchAdminTab('setlist');
             } else if (pin === MEMBER_KEY) {
                 document.getElementById('login-screen').classList.add('hidden');
@@ -335,9 +347,13 @@
             generateAdminForm();
         }
 
-        function setupCategoryDropdown() {
+        function setupCategoryDropdowns() {
             const dropdown = document.getElementById('lib-new-category');
             dropdown.innerHTML = sectionsList.map(sec => `<option value="${sec}">${sec}</option>`).join('');
+
+            const filterDropdown = document.getElementById('admin-filter-category');
+            filterDropdown.innerHTML = `<option value="ALL">✨ Show All Categories</option>` + 
+                sectionsList.map(sec => `<option value="${sec}">${sec}</option>`).join('');
         }
 
         function switchAdminTab(tabName) {
@@ -353,7 +369,10 @@
                 document.getElementById('tab-library-manager').classList.remove('hidden');
                 btnSunday.className = "btn-secondary"; btnLib.className = "btn-library";
                 cancelLibraryEdit();
-                renderLibraryPreview();
+                
+                document.getElementById('admin-search').value = "";
+                document.getElementById('admin-filter-category').value = "ALL";
+                filterAndRenderAdminLibrary();
             }
         }
 
@@ -366,7 +385,11 @@
             sectionsList.forEach((section, index) => {
                 const group = document.createElement('div');
                 group.className = "form-group";
-                const filteredSongs = masterLibrary.filter(song => song.category === section);
+                
+                // Sorts Sunday selector options alphabetically automatically
+                const filteredSongs = masterLibrary
+                    .filter(song => song.category === section)
+                    .sort((a, b) => a.title.localeCompare(b.title));
 
                 let optionsHtml = `<option value="">-- Skip Section --</option>`;
                 filteredSongs.forEach(song => {
@@ -392,11 +415,12 @@
             await db.from('hymns_library').insert([{ title: titleInput, category: categoryInput, lyrics: lyricsInput }]);
             clearLibraryForm();
             await fetchAllCloudData();
-            renderLibraryPreview();
+            filterAndRenderAdminLibrary();
         }
 
-        function startEditHymn(index) {
-            const song = masterLibrary[index];
+        function startEditHymn(id) {
+            const song = masterLibrary.find(s => s.id === id);
+            if(!song) return;
             editingSongId = song.id;
             
             document.getElementById('library-form-title').innerText = "✏️ Edit Existing Song";
@@ -419,14 +443,14 @@
             
             cancelLibraryEdit();
             await fetchAllCloudData();
-            renderLibraryPreview();
+            filterAndRenderAdminLibrary();
         }
 
         async function deleteHymn(id) {
             if (confirm("Permanently delete this song from cloud?")) {
                 await db.from('hymns_library').delete().eq('id', id);
                 await fetchAllCloudData();
-                renderLibraryPreview();
+                filterAndRenderAdminLibrary();
             }
         }
 
@@ -443,16 +467,34 @@
             document.getElementById('lib-new-lyrics').value = "";
         }
 
-        function renderLibraryPreview() {
+        // Processing routine for alphabetical layout arrangement
+        function filterAndRenderAdminLibrary() {
+            const searchQuery = document.getElementById('admin-search').value.toLowerCase().trim();
+            const categoryFilter = document.getElementById('admin-filter-category').value;
             const container = document.getElementById('library-preview-list');
             container.innerHTML = "";
-            masterLibrary.forEach((song, i) => {
+
+            let filteredList = masterLibrary.filter(song => {
+                const matchesSearch = song.title.toLowerCase().includes(searchQuery);
+                const matchesCategory = (categoryFilter === "ALL" || song.category === categoryFilter);
+                return matchesSearch && matchesCategory;
+            });
+
+            // Arranges values smoothly in A-Z chronological listing order
+            filteredList.sort((a, b) => a.title.localeCompare(b.title));
+
+            if (filteredList.length === 0) {
+                container.innerHTML = `<p style="text-align:center; color:#888; padding: 10px;">No matching hymns found.</p>`;
+                return;
+            }
+
+            filteredList.forEach((song) => {
                 const item = document.createElement('div');
                 item.className = "lib-item";
                 item.innerHTML = `
                     <div><b>${song.title}</b><br><span style="color:var(--library-color); font-size:11px;">${song.category}</span></div>
                     <div class="lib-actions">
-                        <button onclick="startEditHymn(${i})" class="btn-edit">✏️</button>
+                        <button onclick="startEditHymn(${song.id})" class="btn-edit">✏️</button>
                         <button onclick="deleteHymn(${song.id})" class="btn-danger">🗑️</button>
                     </div>
                 `;
