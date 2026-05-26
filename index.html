@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Choir Portal - Complete Hub</title>
+    <title>Choir Portal - Realtime Cloud</title>
+    <!-- Include the Supabase Cloud Library Script -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --bg-color: #121212;
@@ -86,6 +88,7 @@
 
     <div class="container">
         
+        <!-- SCREEN 1: PORTAL GATEKEEPER -->
         <div id="login-screen" class="box" style="margin-top: 80px; text-align: center;">
             <h2>Choir App Portal</h2>
             <p>Enter your access password:</p>
@@ -94,6 +97,7 @@
             <p id="error-msg" style="color: #ff5252;" class="hidden">Invalid credentials. Try again.</p>
         </div>
 
+        <!-- SCREEN 2: MEMBER VIEW -->
         <div id="member-dashboard" class="hidden">
             <div class="nav-header">
                 <h2>Choir Portal</h2>
@@ -110,7 +114,7 @@
                     <button id="btn-mem-week1" onclick="switchMemberWeek('week1')" class="active-toggle">Current Week</button>
                     <button id="btn-mem-week2" onclick="switchMemberWeek('week2')">Next Week</button>
                 </div>
-                <h3 id="view-date" style="color: var(--accent-color); margin-bottom: 10px;">Loading Date...</h3>
+                <h3 id="view-date" style="color: var(--accent-color); margin-bottom: 10px;">Loading live database...</h3>
                 <div id="setlist-render-area"></div>
             </div>
 
@@ -121,6 +125,7 @@
             </div>
         </div>
 
+        <!-- SCREEN 3: ADMIN EDIT HUB -->
         <div id="admin-dashboard" class="hidden">
             <div class="nav-header">
                 <h2>Admin Control Center</h2>
@@ -175,13 +180,17 @@
                     <div id="library-preview-list" style="max-height: 300px; overflow-y: auto; font-size: 14px;"></div>
                 </div>
             </div>
-
-            <button onclick="exportDataData()" class="btn-secondary" style="margin-top: 20px;">Copy System Backup Code</button>
         </div>
 
     </div>
 
     <script>
+        // Paste your Supabase Cloud Keys right here:
+        const SUPABASE_URL = "sb_publishable_8uhlNrfpaCzaLqnMNS7mlg_gIt3ePZo";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pZ2hvdHd0dnJ6eWlxc2xwZXNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3NzAzNzIsImV4cCI6MjA5NTM0NjM3Mn0.t3zZqp_KSN3jwme7OSfA8SyGNDiEAWlETXeCxSxGt44";
+        
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
         const MEMBER_KEY = "Choir2026";
         const ADMIN_KEY = "Admin2026";
 
@@ -191,21 +200,42 @@
             "Communion", "Recessional"
         ];
 
-        const defaultLibrary = [
-            { title: "Amazing Grace", category: "Entrance", lyrics: "Amazing grace! How sweet the sound\nThat saved a wretch like me!" },
-            { title: "Kyrie Eleison", category: "Lord have mercy", lyrics: "Lord have mercy.\nChrist have mercy." }
-        ];
-
-        const blankWeek1 = { date: "Current Sunday", hymns: sectionsList.map(sec => ({ section: sec, title: "", lyrics: "" })) };
-        const blankWeek2 = { date: "Next Sunday", hymns: sectionsList.map(sec => ({ section: sec, title: "", lyrics: "" })) };
-
-        let masterLibrary = JSON.parse(localStorage.getItem('choirLibrary')) || defaultLibrary;
-        let week1Data = JSON.parse(localStorage.getItem('choirWeek1')) || blankWeek1;
-        let week2Data = JSON.parse(localStorage.getItem('choirWeek2')) || blankWeek2;
+        let masterLibrary = [];
+        let week1Data = { date: "Loading...", hymns: [] };
+        let week2Data = { date: "Loading...", hymns: [] };
 
         let activeMemberWeek = "week1";
         let activeAdminWeek = "week1";
-        let editingIndex = null; // Keeps track of what song index is being modified
+        let editingSongId = null;
+
+        // Automatically connect to the cloud and listen for real-time instant changes
+        async function initializeCloudConnection() {
+            await fetchAllCloudData();
+            
+            // The Live Engine listener loop
+            supabase.channel('cloud-sync')
+                .on('postgres_changes', { event: '*', filter: 'id=neq.0' }, async () => {
+                    await fetchAllCloudData();
+                    if (!document.getElementById('member-dashboard').classList.contains('hidden')) {
+                        if (activeMemberWeek) renderMemberSetlist();
+                        else filterMemberLibrary();
+                    }
+                })
+                .subscribe();
+        }
+
+        async function fetchAllCloudData() {
+            let { data: lib } = await supabase.from('hymns_library').select('*');
+            masterLibrary = lib || [];
+            
+            let { data: scheds } = await supabase.from('schedules').select('*');
+            if (scheds) {
+                let w1 = scheds.find(s => s.week_key === 'week1');
+                let w2 = scheds.find(s => s.week_key === 'week2');
+                if (w1) week1Data = { date: w1.sunday_date, hymns: w1.hymns_array };
+                if (w2) week2Data = { date: w2.sunday_date, hymns: w2.hymns_array };
+            }
+        }
 
         function handleLogin() {
             const pin = document.getElementById('password-input').value.trim();
@@ -251,9 +281,14 @@
 
         function renderMemberSetlist() {
             const currentWorkingWeek = (activeMemberWeek === 'week1') ? week1Data : week2Data;
-            document.getElementById('view-date').innerText = currentWorkingWeek.date;
+            document.getElementById('view-date').innerText = currentWorkingWeek.date || "No date set";
             const container = document.getElementById('setlist-render-area');
             container.innerHTML = "";
+
+            if (!currentWorkingWeek.hymns || currentWorkingWeek.hymns.length === 0) {
+                container.innerHTML = `<p style="text-align:center; color:#888;">No hymns published yet.</p>`;
+                return;
+            }
 
             currentWorkingWeek.hymns.forEach(hymn => {
                 if (hymn.title && hymn.title !== "") {
@@ -328,7 +363,7 @@
 
         function generateAdminForm() {
             const targetWeekData = (activeAdminWeek === 'week1') ? week1Data : week2Data;
-            document.getElementById('edit-date').value = targetWeekData.date;
+            document.getElementById('edit-date').value = targetWeekData.date || "";
             const formContainer = document.getElementById('admin-form-fields');
             formContainer.innerHTML = "";
 
@@ -339,7 +374,7 @@
 
                 let optionsHtml = `<option value="">-- Skip Section --</option>`;
                 filteredSongs.forEach(song => {
-                    const selectedStr = (targetWeekData.hymns[index] && targetWeekData.hymns[index].title === song.title) ? "selected" : "";
+                    const selectedStr = (targetWeekData.hymns && targetWeekData.hymns[index] && targetWeekData.hymns[index].title === song.title) ? "selected" : "";
                     optionsHtml += `<option value="${song.title}" ${selectedStr}>${song.title}</option>`;
                 });
 
@@ -351,27 +386,22 @@
             });
         }
 
-        function addNewSongToLibrary() {
+        async function addNewSongToLibrary() {
             const titleInput = document.getElementById('lib-new-title').value.trim();
             const categoryInput = document.getElementById('lib-new-category').value;
             const lyricsInput = document.getElementById('lib-new-lyrics').value.trim();
 
-            if (!titleInput || !lyricsInput) {
-                alert("Please fill out both the song title and its lyrics!");
-                return;
-            }
+            if (!titleInput || !lyricsInput) return alert("Please fill out all fields!");
 
-            masterLibrary.push({ title: titleInput, category: categoryInput, lyrics: lyricsInput });
-            localStorage.setItem('choirLibrary', JSON.stringify(masterLibrary));
+            await supabase.from('hymns_library').insert([{ title: titleInput, category: categoryInput, lyrics: lyricsInput }]);
             clearLibraryForm();
-            alert(`"${titleInput}" saved to library!`);
+            await fetchAllCloudData();
             renderLibraryPreview();
         }
 
-        // TRIGGER EDIT MODE
         function startEditHymn(index) {
-            editingIndex = index;
             const song = masterLibrary[index];
+            editingSongId = song.id;
             
             document.getElementById('library-form-title').innerText = "✏️ Edit Existing Song";
             document.getElementById('lib-new-title').value = song.title;
@@ -383,62 +413,29 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        function updateExistingSong() {
-            if (editingIndex === null) return;
-            
-            const oldTitle = masterLibrary[editingIndex].title;
+        async function updateExistingSong() {
+            if (!editingSongId) return;
             const newTitle = document.getElementById('lib-new-title').value.trim();
             const newCategory = document.getElementById('lib-new-category').value;
             const newLyrics = document.getElementById('lib-new-lyrics').value.trim();
 
-            if (!newTitle || !newLyrics) {
-                alert("Fields cannot be left empty!");
-                return;
-            }
-
-            // Update in library array
-            masterLibrary[editingIndex] = { title: newTitle, category: newCategory, lyrics: newLyrics };
-            localStorage.setItem('choirLibrary', JSON.stringify(masterLibrary));
-
-            // Sync structural edits over existing schedules so old setlists don't break lyrics layout
-            syncSetlistLyricsAfterEdit(oldTitle, newTitle, newLyrics);
-
+            await supabase.from('hymns_library').update({ title: newTitle, category: newCategory, lyrics: newLyrics }).eq('id', editingSongId);
+            
             cancelLibraryEdit();
-            alert(`"${newTitle}" updated successfully!`);
+            await fetchAllCloudData();
             renderLibraryPreview();
         }
 
-        function syncSetlistLyricsAfterEdit(oldTitle, newTitle, newLyrics) {
-            [week1Data, week2Data].forEach(week => {
-                week.hymns.forEach(hymn => {
-                    if (hymn.title === oldTitle) {
-                        hymn.title = newTitle;
-                        hymn.lyrics = newLyrics;
-                    }
-                });
-            });
-            localStorage.setItem('choirWeek1', JSON.stringify(week1Data));
-            localStorage.setItem('choirWeek2', JSON.stringify(week2Data));
-        }
-
-        // TRIGGER DELETE FEATURE
-        function deleteHymn(index) {
-            const songName = masterLibrary[index].title;
-            const confirmed = confirm(`Are you absolutely sure you want to completely delete "${songName}" from your database?`);
-            
-            if (confirmed) {
-                masterLibrary.splice(index, 1); // Removes song from array
-                localStorage.setItem('choirLibrary', JSON.stringify(masterLibrary));
-                
-                if (editingIndex === index) cancelLibraryEdit();
-                
+        async function deleteHymn(id) {
+            if (confirm("Permanently delete this song from cloud?")) {
+                await supabase.from('hymns_library').delete().eq('id', id);
+                await fetchAllCloudData();
                 renderLibraryPreview();
-                alert(`"${songName}" has been permanently removed.`);
             }
         }
 
         function cancelLibraryEdit() {
-            editingIndex = null;
+            editingSongId = null;
             document.getElementById('library-form-title').innerText = "Add New Song to Library";
             clearLibraryForm();
             document.getElementById('btn-library-save').classList.remove('hidden');
@@ -453,56 +450,37 @@
         function renderLibraryPreview() {
             const container = document.getElementById('library-preview-list');
             container.innerHTML = "";
-
-            if (masterLibrary.length === 0) {
-                container.innerHTML = `<p style="color:#aaa; text-align:center;">Your library is empty.</p>`;
-                return;
-            }
-
             masterLibrary.forEach((song, i) => {
                 const item = document.createElement('div');
                 item.className = "lib-item";
                 item.innerHTML = `
-                    <div>
-                        🎵 <b>${song.title}</b> <br>
-                        <span style="color: var(--library-color); font-size:11px; font-weight:bold;">${song.category}</span>
-                    </div>
+                    <div><b>${song.title}</b><br><span style="color:var(--library-color); font-size:11px;">${song.category}</span></div>
                     <div class="lib-actions">
-                        <button onclick="startEditHymn(${i})" class="btn-edit">✏️ Edit</button>
-                        <button onclick="deleteHymn(${i})" class="btn-danger">🗑️ Delete</button>
+                        <button onclick="startEditHymn(${i})" class="btn-edit">✏️</button>
+                        <button onclick="deleteHymn(${song.id})" class="btn-danger">🗑️</button>
                     </div>
                 `;
                 container.appendChild(item);
             });
         }
 
-        function saveAdminData() {
-            const targetWeekData = (activeAdminWeek === 'week1') ? week1Data : week2Data;
-            targetWeekData.date = document.getElementById('edit-date').value;
-            
-            sectionsList.forEach((section, index) => {
+        async function saveAdminData() {
+            const targetDate = document.getElementById('edit-date').value;
+            const compiledHymns = sectionsList.map((section, index) => {
                 const selectedTitle = document.getElementById(`select-${index}`).value;
                 const matchedSong = masterLibrary.find(s => s.title === selectedTitle);
-                
-                targetWeekData.hymns[index] = {
-                    section: section,
-                    title: selectedTitle,
-                    lyrics: matchedSong ? matchedSong.lyrics : ""
-                };
+                return { section: section, title: selectedTitle, lyrics: matchedSong ? matchedSong.lyrics : "" };
             });
 
-            if (activeAdminWeek === 'week1') {
-                localStorage.setItem('choirWeek1', JSON.stringify(week1Data));
-            } else {
-                localStorage.setItem('choirWeek2', JSON.stringify(week2Data));
-            }
-            alert("Setlist changes published successfully!");
-        }
+            // Upsert directly into the cloud database row
+            await supabase.from('schedules').upsert({ 
+                week_key: activeAdminWeek, 
+                sunday_date: targetDate, 
+                hymns_array: compiledHymns 
+            }, { onConflict: 'week_key' });
 
-        function exportDataData() {
-            const packageData = { library: masterLibrary, week1: week1Data, week2: week2Data };
-            navigator.clipboard.writeText(JSON.stringify(packageData));
-            alert("System backup code copied to clipboard!");
+            alert("Setlist broadcast live to all devices!");
+            await fetchAllCloudData();
         }
 
         function logout() {
@@ -511,6 +489,9 @@
             document.getElementById('member-dashboard').classList.add('hidden');
             document.getElementById('login-screen').classList.remove('hidden');
         }
+
+        // Initialize connection when page loads
+        window.onload = initializeCloudConnection;
     </script>
 </body>
 </html>
