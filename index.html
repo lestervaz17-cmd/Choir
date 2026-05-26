@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Choir Portal - Realtime Cloud</title>
-    <!-- Include the Supabase Cloud Library Script -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -88,7 +87,6 @@
 
     <div class="container">
         
-        <!-- SCREEN 1: PORTAL GATEKEEPER -->
         <div id="login-screen" class="box" style="margin-top: 80px; text-align: center;">
             <h2>Choir App Portal</h2>
             <p>Enter your access password:</p>
@@ -97,7 +95,6 @@
             <p id="error-msg" style="color: #ff5252;" class="hidden">Invalid credentials. Try again.</p>
         </div>
 
-        <!-- SCREEN 2: MEMBER VIEW -->
         <div id="member-dashboard" class="hidden">
             <div class="nav-header">
                 <h2>Choir Portal</h2>
@@ -125,7 +122,6 @@
             </div>
         </div>
 
-        <!-- SCREEN 3: ADMIN EDIT HUB -->
         <div id="admin-dashboard" class="hidden">
             <div class="nav-header">
                 <h2>Admin Control Center</h2>
@@ -185,11 +181,12 @@
     </div>
 
     <script>
-        // Paste your Supabase Cloud Keys right here:
-        const SUPABASE_URL = "https://oighotwtvrzyiqslpeso.supabase.co";
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pZ2hvdHd0dnJ6eWlxc2xwZXNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3NzAzNzIsImV4cCI6MjA5NTM0NjM3Mn0.t3zZqp_KSN3jwme7OSfA8SyGNDiEAWlETXeCxSxGt44";
+        // Setup configuration parameters using distinct aliases
+        const CLOUD_URL = "https://oighotwtvrzyiqslpeso.supabase.co";
+        const CLOUD_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pZ2hvdHd0dnJ6eWlxc2xwZXNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3NzAzNzIsImV4cCI6MjA5NTM0NjM3Mn0.t3zZqp_KSN3jwme7OSfA8SyGNDiEAWlETXeCxSxGt44";
         
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // We call our variable 'db' instead of 'supabase' to completely avoid collision crashes!
+        const db = window.supabase.createClient(CLOUD_URL, CLOUD_KEY);
 
         const MEMBER_KEY = "Choir2026";
         const ADMIN_KEY = "Admin2026";
@@ -208,13 +205,12 @@
         let activeAdminWeek = "week1";
         let editingSongId = null;
 
-        // Automatically connect to the cloud and listen for real-time instant changes
         async function initializeCloudConnection() {
             await fetchAllCloudData();
             
-            // The Live Engine listener loop
-            supabase.channel('cloud-sync')
-                .on('postgres_changes', { event: '*', filter: 'id=neq.0' }, async () => {
+            // Listen live via the renamed database channel framework
+            db.channel('cloud-sync')
+                .on('postgres_changes', { event: '*', schema: 'public' }, async () => {
                     await fetchAllCloudData();
                     if (!document.getElementById('member-dashboard').classList.contains('hidden')) {
                         if (activeMemberWeek) renderMemberSetlist();
@@ -225,10 +221,10 @@
         }
 
         async function fetchAllCloudData() {
-            let { data: lib } = await supabase.from('hymns_library').select('*');
+            let { data: lib } = await db.from('hymns_library').select('*');
             masterLibrary = lib || [];
             
-            let { data: scheds } = await supabase.from('schedules').select('*');
+            let { data: scheds } = await db.from('schedules').select('*');
             if (scheds) {
                 let w1 = scheds.find(s => s.week_key === 'week1');
                 let w2 = scheds.find(s => s.week_key === 'week2');
@@ -393,7 +389,7 @@
 
             if (!titleInput || !lyricsInput) return alert("Please fill out all fields!");
 
-            await supabase.from('hymns_library').insert([{ title: titleInput, category: categoryInput, lyrics: lyricsInput }]);
+            await db.from('hymns_library').insert([{ title: titleInput, category: categoryInput, lyrics: lyricsInput }]);
             clearLibraryForm();
             await fetchAllCloudData();
             renderLibraryPreview();
@@ -419,7 +415,7 @@
             const newCategory = document.getElementById('lib-new-category').value;
             const newLyrics = document.getElementById('lib-new-lyrics').value.trim();
 
-            await supabase.from('hymns_library').update({ title: newTitle, category: newCategory, lyrics: newLyrics }).eq('id', editingSongId);
+            await db.from('hymns_library').update({ title: newTitle, category: newCategory, lyrics: newLyrics }).eq('id', editingSongId);
             
             cancelLibraryEdit();
             await fetchAllCloudData();
@@ -428,7 +424,7 @@
 
         async function deleteHymn(id) {
             if (confirm("Permanently delete this song from cloud?")) {
-                await supabase.from('hymns_library').delete().eq('id', id);
+                await db.from('hymns_library').delete().eq('id', id);
                 await fetchAllCloudData();
                 renderLibraryPreview();
             }
@@ -472,8 +468,7 @@
                 return { section: section, title: selectedTitle, lyrics: matchedSong ? matchedSong.lyrics : "" };
             });
 
-            // Upsert directly into the cloud database row
-            await supabase.from('schedules').upsert({ 
+            await db.from('schedules').upsert({ 
                 week_key: activeAdminWeek, 
                 sunday_date: targetDate, 
                 hymns_array: compiledHymns 
@@ -490,9 +485,7 @@
             document.getElementById('login-screen').classList.remove('hidden');
         }
 
-        // UPGRADED INITIALIZATION RULE: This prevents the login button from freezing!
         window.onload = function() {
-            // Try to connect to your cloud in the background without freezing the layout
             initializeCloudConnection().catch(err => console.log("Cloud connection waiting...", err));
         };
     </script>
