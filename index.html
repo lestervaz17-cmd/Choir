@@ -490,8 +490,11 @@
             document.getElementById('login-screen').classList.remove('hidden');
         }
 
-        // Initialize connection when page loads
-        window.onload = initializeCloudConnection;
+        // UPGRADED INITIALIZATION RULE: This prevents the login button from freezing!
+        window.onload = function() {
+            // Try to connect to your cloud in the background without freezing the layout
+            initializeCloudConnection().catch(err => console.log("Cloud connection waiting...", err));
+        };
     </script>
 </body>
 </html>
