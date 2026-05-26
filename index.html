@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Choir Portal - Complete Search & Filter Hub</title>
+    <title>Choir Portal - Advanced Cloud Sync Hub</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -53,6 +53,7 @@
         .btn-secondary { background: #555; }
         .btn-danger { background: var(--danger-color); padding: 6px 10px; width: auto; font-size: 13px; margin: 0;}
         .btn-edit { background: #ff9800; padding: 6px 10px; width: auto; font-size: 13px; margin: 0; margin-right: 5px;}
+        .btn-shift { background: #e91e63; margin-top: 5px; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; }
         
         .hymn-card {
             background: var(--card-bg);
@@ -82,7 +83,6 @@
         .lib-item { padding: 10px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
         .lib-actions { display: flex; align-items: center; }
         
-        /* New side-by-side alignment formatting for the search row tools */
         .filter-row { display: flex; gap: 10px; margin-bottom: 15px; }
         .filter-row input, .filter-row select { margin: 0; }
     </style>
@@ -141,6 +141,10 @@
                 <div class="week-toggle">
                     <button id="btn-adm-week1" onclick="switchAdminWeek('week1')" class="active-toggle">Edit Current Week</button>
                     <button id="btn-adm-week2" onclick="switchAdminWeek('week2')">Edit Next Week</button>
+                </div>
+
+                <div id="shift-action-container" class="hidden">
+                    <button onclick="shiftNextWeekToCurrent()" class="btn-shift">📋 Paste Next Week's Setlist to Current Week</button>
                 </div>
 
                 <div class="box">
@@ -226,6 +230,8 @@
                     } else if (!document.getElementById('admin-dashboard').classList.contains('hidden')) {
                         if (document.getElementById('tab-library-manager').classList.contains('hidden') === false) {
                             filterAndRenderAdminLibrary();
+                        } else {
+                            generateAdminForm();
                         }
                     }
                 })
@@ -344,6 +350,15 @@
             activeAdminWeek = weekKey;
             document.getElementById('btn-adm-week1').className = (weekKey === 'week1') ? "active-toggle" : "";
             document.getElementById('btn-adm-week2').className = (weekKey === 'week2') ? "active-toggle" : "";
+            
+            // Show the copy option ONLY when viewing the 'Next Week' editing board
+            const shiftBtnBlock = document.getElementById('shift-action-container');
+            if (weekKey === 'week2') {
+                shiftBtnBlock.classList.remove('hidden');
+            } else {
+                shiftBtnBlock.classList.add('hidden');
+            }
+
             generateAdminForm();
         }
 
@@ -363,11 +378,12 @@
                 document.getElementById('tab-sunday-planner').classList.remove('hidden');
                 document.getElementById('tab-library-manager').classList.add('hidden');
                 btnSunday.className = "btn-admin"; btnLib.className = "btn-secondary";
-                generateAdminForm();
+                switchAdminWeek(activeAdminWeek);
             } else {
                 document.getElementById('tab-sunday-planner').classList.add('hidden');
                 document.getElementById('tab-library-manager').classList.remove('hidden');
                 btnSunday.className = "btn-secondary"; btnLib.className = "btn-library";
+                document.getElementById('shift-action-container').classList.add('hidden');
                 cancelLibraryEdit();
                 
                 document.getElementById('admin-search').value = "";
@@ -386,7 +402,6 @@
                 const group = document.createElement('div');
                 group.className = "form-group";
                 
-                // Sorts Sunday selector options alphabetically automatically
                 const filteredSongs = masterLibrary
                     .filter(song => song.category === section)
                     .sort((a, b) => a.title.localeCompare(b.title));
@@ -403,6 +418,26 @@
                 `;
                 formContainer.appendChild(group);
             });
+        }
+
+        // NEW ENGINE FUNCTION: Clones Next Week (week2) into Current Week (week1) in the cloud database
+        async function shiftNextWeekToCurrent() {
+            if (week2Data.hymns.length === 0) {
+                return alert("Next week's setlist is completely empty! Add some songs before copying.");
+            }
+
+            if (confirm("Are you sure you want to overwrite your Current Week setlist with everything planned in Next Week?")) {
+                // Update row 'week1' using the exact array data stored in 'week2'
+                await db.from('schedules').upsert({ 
+                    week_key: "week1", 
+                    sunday_date: week2Data.date, 
+                    hymns_array: week2Data.hymns 
+                }, { onConflict: 'week_key' });
+
+                alert("Success! Next week's schedule has been pasted into Current Week and broadcast to all phones!");
+                await fetchAllCloudData();
+                switchAdminWeek('week1'); // Take admin back to view the newly updated Current Week panel
+            }
         }
 
         async function addNewSongToLibrary() {
@@ -467,7 +502,6 @@
             document.getElementById('lib-new-lyrics').value = "";
         }
 
-        // Processing routine for alphabetical layout arrangement
         function filterAndRenderAdminLibrary() {
             const searchQuery = document.getElementById('admin-search').value.toLowerCase().trim();
             const categoryFilter = document.getElementById('admin-filter-category').value;
@@ -480,7 +514,6 @@
                 return matchesSearch && matchesCategory;
             });
 
-            // Arranges values smoothly in A-Z chronological listing order
             filteredList.sort((a, b) => a.title.localeCompare(b.title));
 
             if (filteredList.length === 0) {
