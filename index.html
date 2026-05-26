@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Choir Portal - Multi-Week Planner</title>
+    <title>Choir Portal - Complete Hub</title>
     <style>
         :root {
             --bg-color: #121212;
@@ -12,6 +12,7 @@
             --accent-color: #2196F3;
             --admin-color: #4caf50;
             --library-color: #9c27b0;
+            --danger-color: #f44336;
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -49,6 +50,8 @@
         .btn-admin { background: var(--admin-color); }
         .btn-library { background: var(--library-color); }
         .btn-secondary { background: #555; }
+        .btn-danger { background: var(--danger-color); padding: 6px 10px; width: auto; font-size: 13px; margin: 0;}
+        .btn-edit { background: #ff9800; padding: 6px 10px; width: auto; font-size: 13px; margin: 0; margin-right: 5px;}
         
         .hymn-card {
             background: var(--card-bg);
@@ -75,6 +78,8 @@
         .active-toggle { background: #444 !important; border: 1px solid #666; }
         
         .search-bar { background: #2a2a2a; border: 1px solid #333; color: white; padding: 10px; border-radius: 6px; margin-bottom: 15px; width: 100%; box-sizing: border-box; font-size: 16px;}
+        .lib-item { padding: 10px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
+        .lib-actions { display: flex; align-items: center; }
     </style>
 </head>
 <body>
@@ -148,7 +153,7 @@
 
             <div id="tab-library-manager" class="hidden">
                 <div class="box">
-                    <h3>Add New Song to Library</h3>
+                    <h3 id="library-form-title">Add New Song to Library</h3>
                     <label>Song Title:</label>
                     <input type="text" id="lib-new-title" placeholder="e.g., Amazing Grace">
                     
@@ -157,12 +162,17 @@
                     
                     <label>Song Lyrics:</label>
                     <textarea id="lib-new-lyrics" placeholder="Paste entire song lyrics here..."></textarea>
-                    <button onclick="addNewSongToLibrary()" class="btn-library">Save Song to Library</button>
+                    
+                    <button id="btn-library-save" onclick="addNewSongToLibrary()" class="btn-library">Save New Song</button>
+                    <div id="edit-action-block" class="hidden" style="display: flex; gap: 10px;">
+                        <button onclick="updateExistingSong()" class="btn-admin" style="margin: 0;">Update Changes</button>
+                        <button onclick="cancelLibraryEdit()" class="btn-secondary" style="margin: 0;">Cancel Edit</button>
+                    </div>
                 </div>
 
                 <div class="box">
                     <h3>Your Saved Songs Master List</h3>
-                    <div id="library-preview-list" style="max-height: 250px; overflow-y: auto; font-size: 14px;"></div>
+                    <div id="library-preview-list" style="max-height: 300px; overflow-y: auto; font-size: 14px;"></div>
                 </div>
             </div>
 
@@ -183,23 +193,19 @@
 
         const defaultLibrary = [
             { title: "Amazing Grace", category: "Entrance", lyrics: "Amazing grace! How sweet the sound\nThat saved a wretch like me!" },
-            { title: "Kyrie Eleison", category: "Lord have mercy", lyrics: "Lord have mercy.\nChrist have mercy." },
-            { title: "All Glory to God", category: "Gloria", lyrics: "Glory to God in the highest." },
-            { title: "Take My Life", category: "Recessional", lyrics: "Take my life and let it be\nConsecrated, Lord, to Thee." }
+            { title: "Kyrie Eleison", category: "Lord have mercy", lyrics: "Lord have mercy.\nChrist have mercy." }
         ];
 
-        // Create empty templates for both schedules
         const blankWeek1 = { date: "Current Sunday", hymns: sectionsList.map(sec => ({ section: sec, title: "", lyrics: "" })) };
         const blankWeek2 = { date: "Next Sunday", hymns: sectionsList.map(sec => ({ section: sec, title: "", lyrics: "" })) };
 
-        // System state container
         let masterLibrary = JSON.parse(localStorage.getItem('choirLibrary')) || defaultLibrary;
         let week1Data = JSON.parse(localStorage.getItem('choirWeek1')) || blankWeek1;
         let week2Data = JSON.parse(localStorage.getItem('choirWeek2')) || blankWeek2;
 
-        // Dynamic view track variables
         let activeMemberWeek = "week1";
         let activeAdminWeek = "week1";
+        let editingIndex = null; // Keeps track of what song index is being modified
 
         function handleLogin() {
             const pin = document.getElementById('password-input').value.trim();
@@ -219,22 +225,18 @@
             }
         }
 
-        // MEMBER VIEW SYSTEM RULES
         function switchMemberTab(tab) {
             const btnSunday = document.getElementById('btn-mem-sunday');
             const btnLib = document.getElementById('btn-mem-lib');
-            
             if (tab === 'sunday') {
                 document.getElementById('tab-member-sunday').classList.remove('hidden');
                 document.getElementById('tab-member-library').classList.add('hidden');
-                btnSunday.className = "btn-admin";
-                btnLib.className = "btn-secondary";
+                btnSunday.className = "btn-admin"; btnLib.className = "btn-secondary";
                 renderMemberSetlist();
             } else {
                 document.getElementById('tab-member-sunday').classList.add('hidden');
                 document.getElementById('tab-member-library').classList.remove('hidden');
-                btnSunday.className = "btn-secondary";
-                btnLib.className = "btn-library";
+                btnSunday.className = "btn-secondary"; btnLib.className = "btn-library";
                 document.getElementById('member-search').value = "";
                 renderMemberLibrary(masterLibrary);
             }
@@ -250,7 +252,6 @@
         function renderMemberSetlist() {
             const currentWorkingWeek = (activeMemberWeek === 'week1') ? week1Data : week2Data;
             document.getElementById('view-date').innerText = currentWorkingWeek.date;
-            
             const container = document.getElementById('setlist-render-area');
             container.innerHTML = "";
 
@@ -296,7 +297,6 @@
             renderMemberLibrary(filtered);
         }
 
-        // ADMIN CONFIG WORKSPACE MANAGEMENT
         function switchAdminWeek(weekKey) {
             activeAdminWeek = weekKey;
             document.getElementById('btn-adm-week1').className = (weekKey === 'week1') ? "active-toggle" : "";
@@ -312,18 +312,16 @@
         function switchAdminTab(tabName) {
             const btnSunday = document.getElementById('btn-adm-sunday');
             const btnLib = document.getElementById('btn-adm-lib');
-
             if (tabName === 'setlist') {
                 document.getElementById('tab-sunday-planner').classList.remove('hidden');
                 document.getElementById('tab-library-manager').classList.add('hidden');
-                btnSunday.className = "btn-admin";
-                btnLib.className = "btn-secondary";
+                btnSunday.className = "btn-admin"; btnLib.className = "btn-secondary";
                 generateAdminForm();
             } else {
                 document.getElementById('tab-sunday-planner').classList.add('hidden');
                 document.getElementById('tab-library-manager').classList.remove('hidden');
-                btnSunday.className = "btn-secondary";
-                btnLib.className = "btn-library";
+                btnSunday.className = "btn-secondary"; btnLib.className = "btn-library";
+                cancelLibraryEdit();
                 renderLibraryPreview();
             }
         }
@@ -331,14 +329,12 @@
         function generateAdminForm() {
             const targetWeekData = (activeAdminWeek === 'week1') ? week1Data : week2Data;
             document.getElementById('edit-date').value = targetWeekData.date;
-            
             const formContainer = document.getElementById('admin-form-fields');
             formContainer.innerHTML = "";
 
             sectionsList.forEach((section, index) => {
                 const group = document.createElement('div');
                 group.className = "form-group";
-                
                 const filteredSongs = masterLibrary.filter(song => song.category === section);
 
                 let optionsHtml = `<option value="">-- Skip Section --</option>`;
@@ -367,22 +363,117 @@
 
             masterLibrary.push({ title: titleInput, category: categoryInput, lyrics: lyricsInput });
             localStorage.setItem('choirLibrary', JSON.stringify(masterLibrary));
+            clearLibraryForm();
+            alert(`"${titleInput}" saved to library!`);
+            renderLibraryPreview();
+        }
+
+        // TRIGGER EDIT MODE
+        function startEditHymn(index) {
+            editingIndex = index;
+            const song = masterLibrary[index];
             
+            document.getElementById('library-form-title').innerText = "✏️ Edit Existing Song";
+            document.getElementById('lib-new-title').value = song.title;
+            document.getElementById('lib-new-category').value = song.category;
+            document.getElementById('lib-new-lyrics').value = song.lyrics;
+
+            document.getElementById('btn-library-save').classList.add('hidden');
+            document.getElementById('edit-action-block').classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function updateExistingSong() {
+            if (editingIndex === null) return;
+            
+            const oldTitle = masterLibrary[editingIndex].title;
+            const newTitle = document.getElementById('lib-new-title').value.trim();
+            const newCategory = document.getElementById('lib-new-category').value;
+            const newLyrics = document.getElementById('lib-new-lyrics').value.trim();
+
+            if (!newTitle || !newLyrics) {
+                alert("Fields cannot be left empty!");
+                return;
+            }
+
+            // Update in library array
+            masterLibrary[editingIndex] = { title: newTitle, category: newCategory, lyrics: newLyrics };
+            localStorage.setItem('choirLibrary', JSON.stringify(masterLibrary));
+
+            // Sync structural edits over existing schedules so old setlists don't break lyrics layout
+            syncSetlistLyricsAfterEdit(oldTitle, newTitle, newLyrics);
+
+            cancelLibraryEdit();
+            alert(`"${newTitle}" updated successfully!`);
+            renderLibraryPreview();
+        }
+
+        function syncSetlistLyricsAfterEdit(oldTitle, newTitle, newLyrics) {
+            [week1Data, week2Data].forEach(week => {
+                week.hymns.forEach(hymn => {
+                    if (hymn.title === oldTitle) {
+                        hymn.title = newTitle;
+                        hymn.lyrics = newLyrics;
+                    }
+                });
+            });
+            localStorage.setItem('choirWeek1', JSON.stringify(week1Data));
+            localStorage.setItem('choirWeek2', JSON.stringify(week2Data));
+        }
+
+        // TRIGGER DELETE FEATURE
+        function deleteHymn(index) {
+            const songName = masterLibrary[index].title;
+            const confirmed = confirm(`Are you absolutely sure you want to completely delete "${songName}" from your database?`);
+            
+            if (confirmed) {
+                masterLibrary.splice(index, 1); // Removes song from array
+                localStorage.setItem('choirLibrary', JSON.stringify(masterLibrary));
+                
+                if (editingIndex === index) cancelLibraryEdit();
+                
+                renderLibraryPreview();
+                alert(`"${songName}" has been permanently removed.`);
+            }
+        }
+
+        function cancelLibraryEdit() {
+            editingIndex = null;
+            document.getElementById('library-form-title').innerText = "Add New Song to Library";
+            clearLibraryForm();
+            document.getElementById('btn-library-save').classList.remove('hidden');
+            document.getElementById('edit-action-block').classList.add('hidden');
+        }
+
+        function clearLibraryForm() {
             document.getElementById('lib-new-title').value = "";
             document.getElementById('lib-new-lyrics').value = "";
-            
-            alert(`"${titleInput}" saved into master library!`);
-            renderLibraryPreview();
         }
 
         function renderLibraryPreview() {
             const container = document.getElementById('library-preview-list');
-            container.innerHTML = masterLibrary.map((song, i) => `
-                <div style="padding: 8px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center;">
-                    <span>🎵 <b>${song.title}</b></span>
-                    <span style="background: #333; color: var(--library-color); font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: bold;">${song.category}</span>
-                </div>
-            `).join('');
+            container.innerHTML = "";
+
+            if (masterLibrary.length === 0) {
+                container.innerHTML = `<p style="color:#aaa; text-align:center;">Your library is empty.</p>`;
+                return;
+            }
+
+            masterLibrary.forEach((song, i) => {
+                const item = document.createElement('div');
+                item.className = "lib-item";
+                item.innerHTML = `
+                    <div>
+                        🎵 <b>${song.title}</b> <br>
+                        <span style="color: var(--library-color); font-size:11px; font-weight:bold;">${song.category}</span>
+                    </div>
+                    <div class="lib-actions">
+                        <button onclick="startEditHymn(${i})" class="btn-edit">✏️ Edit</button>
+                        <button onclick="deleteHymn(${i})" class="btn-danger">🗑️ Delete</button>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
         }
 
         function saveAdminData() {
@@ -405,13 +496,13 @@
             } else {
                 localStorage.setItem('choirWeek2', JSON.stringify(week2Data));
             }
-            alert(`Setlist for ${activeAdminWeek === 'week1' ? 'Current Week' : 'Next Week'} updated successfully!`);
+            alert("Setlist changes published successfully!");
         }
 
         function exportDataData() {
             const packageData = { library: masterLibrary, week1: week1Data, week2: week2Data };
             navigator.clipboard.writeText(JSON.stringify(packageData));
-            alert("System backup code copied! Paste this into your GitHub file to update your team.");
+            alert("System backup code copied to clipboard!");
         }
 
         function logout() {
