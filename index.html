@@ -454,8 +454,9 @@
     </div>
 
     <script>
+        // PERMANENT SYSTEM ENCRYPTED ROUTING STRINGS
         const CLOUD_URL = "https://oighotwtvrzyiqslpeso.supabase.co";
-        const CLOUD_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pZ2hvdHd0dnJ6eWlxc2xwZXNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3NzAzNzExLCJleHAiOjIwOTUzNDYzNzF9.t3zZqp_KSN3jwme7OSfA8SyGNDiEAWlETXeCxSxGt44";
+        const CLOUD_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pZ2hvdHd0dnJ6eWlxc2xwZXNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3NzAzNzIsImV4cCI6MjA5NTM0NjM3Mn0.t3zZqp_KSN3jwme7OSfA8SyGNDiEAWlETXeCxSxGt44";
         
         const db = window.supabase.createClient(CLOUD_URL, CLOUD_KEY);
 
@@ -625,7 +626,6 @@
             document.getElementById('tab-member-library').classList.add('hidden');
             document.getElementById('tab-member-attendance').classList.add('hidden');
             
-            // Clean up old active classes safely
             [btnSunday, btnLib, btnAttend].forEach(btn => btn.className = "");
 
             if (tab === 'sunday') {
