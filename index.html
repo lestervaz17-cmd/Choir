@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Choir Portal - Dynamic Roster & Sync Hub</title>
+    <title>Samelpada Choir Portal 1.0</title>
     <!-- Include the Supabase Cloud Library Script -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -149,7 +149,7 @@
                 <div id="member-library-render-area"></div>
             </div>
 
-            <!-- MEMBER TAB 3: INTERACTIVE ATTENDANCE ROSTER VIEW -->
+            <!-- MEMBER TAB 3: ATTENDANCE ROSTER -->
             <div id="tab-member-attendance" class="hidden">
                 <h3>Mass Attendance Roster</h3>
                 <div class="member-action-row">
@@ -240,14 +240,13 @@
                 </div>
             </div>
 
-            <!-- ADMIN TAB 3: ATTENDANCE & MEMBER DIRECTORY MANAGER -->
+            <!-- ADMIN TAB 3: ATTENDANCE & DIRECTORY -->
             <div id="tab-attendance-tracker" class="hidden">
-                <!-- NEW FEATURE BLOCK: Manage Choir Members Directly -->
                 <div class="box" style="border-left: 4px solid var(--admin-color);">
                     <h3>👥 Choir Group Directory</h3>
                     <div class="filter-row">
                         <input type="text" id="new-member-name" placeholder="Type new member's full name...">
-                        <button onclick="addNewChoirMember()" class="btn-admin" style="width:auto; margin:0; padding:0 20px;">+ Add Member</button>
+                        <button onclick="addNewChoirMember()" class="btn-admin" style="width:auto; margin:0; padding:0 20px;">+ Add</button>
                     </div>
                     <div id="admin-directory-list" style="max-height: 150px; overflow-y: auto; font-size: 14px; background:#1a1a1a; padding:10px; border-radius:6px; border:1px solid #333;"></div>
                 </div>
@@ -286,7 +285,7 @@
         ];
 
         let masterLibrary = [];
-        let choirMembers = []; // Now loads dynamically from the cloud database
+        let choirMembers = []; 
         let week1Data = { date: "Loading...", hymns: [] };
         let week2Data = { date: "Loading...", hymns: [] };
         let scheduledMasses = [];
@@ -319,7 +318,6 @@
         }
 
         async function fetchAllCloudData() {
-            // Load Dynamic Members List from Cloud
             let { data: members } = await db.from('choir_members_list').select('name').order('name', { ascending: true });
             choirMembers = (members || []).map(m => m.name);
 
@@ -370,18 +368,40 @@
             }
         }
 
-        // NEW ENGINE FUNCTION: Adds a new member to the cloud database
+        // INTEGRATED EXPLICIT WEBINTOAPP ALERT DISPATCH ENGINE (From image_159721.png keys)
+        async function sendPushNotification(alertTitle, alertBody) {
+            const url = "https://www.webintoapp.com/api/v2/push-notifications";
+            const payload = {
+                "app_id": "1367163",   
+                "api_key": "WgTyWltAZcowfJBQyPosaLIpsykAmIkg", 
+                "title": alertTitle,
+                "message": alertBody
+            };
+
+            try {
+                await fetch(url, {
+                    method: "POST",
+                    headers: { 
+                        "Content-Type": "application/json" 
+                    },
+                    body: JSON.stringify(payload)
+                });
+                console.log("Push broadcast sent out across WebIntoApp bands successfully.");
+            } catch (err) {
+                console.error("Failed to relay notification packet:", err);
+            }
+        }
+
         async function addNewChoirMember() {
             const nameInput = document.getElementById('new-member-name').value.trim();
             if (!nameInput) return alert("Please enter a member's name!");
 
             let { error } = await db.from('choir_members_list').insert([{ name: nameInput }]);
             if (error) {
-                if (error.code === '23505') return alert("This member name already exists in the choir!");
+                if (error.code === '23505') return alert("This member name already exists!");
                 return alert("Database error adding member.");
             }
 
-            // Automatically check them into any active masses as Absent initially
             if (scheduledMasses.length > 0) {
                 const autoRecords = scheduledMasses.map(mass => {
                     return { mass_id: mass.id, member_name: nameInput, status: "Absent" };
@@ -390,16 +410,15 @@
             }
 
             document.getElementById('new-member-name').value = "";
-            alert(`${nameInput} has been officially added to the choir directory!`);
+            alert(`${nameInput} added to directory!`);
             await fetchAllCloudData();
             updateIdentitySelectorsUI();
             renderAdminDirectoryList();
             renderAdminAttendance();
         }
 
-        // NEW ENGINE FUNCTION: Deletes a member from the directory
         async function removeChoirMember(name) {
-            if (confirm(`Permanently remove ${name} from the choir group? This will clean up their attendance records.`)) {
+            if (confirm(`Remove ${name} from the choir group?`)) {
                 await db.from('choir_members_list').delete().eq('name', name);
                 await db.from('attendance_records').delete().eq('member_name', name);
                 await fetchAllCloudData();
@@ -415,7 +434,7 @@
             container.innerHTML = "";
 
             if (choirMembers.length === 0) {
-                container.innerHTML = `<p style="color:#888; text-align:center; margin:0;">No members in directory.</p>`;
+                container.innerHTML = `<p style="color:#888; text-align:center; margin:0;">No members listed.</p>`;
                 return;
             }
 
@@ -702,8 +721,6 @@
             const name = document.getElementById('attend-mass-name').value.trim();
             const date = document.getElementById('attend-mass-date').value.trim();
 
-            sendPushNotification("New Mass Scheduled! 📅", `A new service "${name}" has been added. Please mark your attendance!`);
-
             if (!name || !date) return alert("Please fill out Mass Name and Date!");
 
             let { data: newMass, error } = await db.from('attendance_masses').insert([{ mass_name: name, mass_date: date }]).select().single();
@@ -719,6 +736,10 @@
             document.getElementById('attend-mass-date').value = "";
             
             alert("Mass scheduled and choir roster tracking initialized!");
+            
+            // Invoke the Notification Broadcast Engine
+            sendPushNotification("New Mass Scheduled! 📅", `A new service "${name}" has been added. Open the roster to mark attendance!`);
+            
             await fetchAllCloudData();
             renderAdminAttendance();
         }
@@ -923,8 +944,6 @@
                     jc_no: matchedSong ? matchedSong.jc_no : "",
                     jl_no: matchedSong ? matchedSong.jl_no : "",
                     lyrics: matchedSong ? matchedSong.lyrics : "" 
-
-                    sendPushNotification("Setlist Uploaded! 🎵", `The setlist for ${targetDate} is now live. Open the app to view lyrics!`);
                 };
             });
 
@@ -935,37 +954,14 @@
             }, { onConflict: 'week_key' });
 
             alert("Setlist broadcast live to all devices!");
+            
+            // Invoke the Notification Broadcast Engine
+            let weekLabel = (activeAdminWeek === 'week1') ? "Current Week" : "Next Week";
+            sendPushNotification("Setlist Uploaded! 🎵", `The choir setlist for ${targetDate} (${weekLabel}) is live. Open the app to check lyrics!`);
+            
             await fetchAllCloudData();
         }
 
-        async function sendPushNotification(alertTitle, alertBody) {
-    // Direct, universal cloud routing endpoint
-    const url = "https://fcm.googleapis.com/fcm/send";
-    
-    const payload = {
-        "to": "/topics/choir-alerts", 
-        "notification": {
-            "title": alertTitle,
-            "body": alertBody,
-            "sound": "default"
-        }
-    };
-
-    try {
-        await fetch(url, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                // Paste your long Firebase Server Key (from Step 2) directly here:
-                "Authorization": "key=PASTE_YOUR_LONG_FIREBASE_SERVER_KEY_HERE"
-            },
-            body: JSON.stringify(payload)
-        });
-        console.log("Push alert broadcast successfully sent via Firebase channel.");
-    } catch (err) {
-        console.error("Direct transmission pipeline error:", err);
-    }
-}
         function logout() {
             document.getElementById('password-input').value = "";
             document.getElementById('admin-dashboard').classList.add('hidden');
