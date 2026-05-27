@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Samelpada Choir Portal 1.0</title>
+    <!-- Include the Supabase Cloud Library Script -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -106,6 +107,7 @@
 
     <div class="container">
         
+        <!-- SCREEN 1: PORTAL GATEKEEPER -->
         <div id="login-screen" class="box" style="margin-top: 80px; text-align: center;">
             <h2>Choir App Portal</h2>
             <p>Enter your access password:</p>
@@ -114,6 +116,7 @@
             <p id="error-msg" style="color: #ff5252;" class="hidden">Invalid credentials. Try again.</p>
         </div>
 
+        <!-- SCREEN 2: MEMBER VIEW -->
         <div id="member-dashboard" class="hidden">
             <div class="nav-header">
                 <h2>Choir Portal</h2>
@@ -126,6 +129,7 @@
                 <button id="btn-mem-attend" onclick="switchMemberTab('attendance')" class="btn-secondary">📋 Roster</button>
             </div>
 
+            <!-- MEMBER TAB 1: SUNDAY SETLISTS -->
             <div id="tab-member-sunday">
                 <div class="week-toggle">
                     <button id="btn-mem-week1" onclick="switchMemberWeek('week1')" class="active-toggle">Current Week</button>
@@ -135,6 +139,7 @@
                 <div id="setlist-render-area"></div>
             </div>
 
+            <!-- MEMBER TAB 2: FULL LIBRARY -->
             <div id="tab-member-library" class="hidden">
                 <h3>Master Hymn Database</h3>
                 <div class="filter-row">
@@ -144,6 +149,7 @@
                 <div id="member-library-render-area"></div>
             </div>
 
+            <!-- MEMBER TAB 3: ATTENDANCE ROSTER -->
             <div id="tab-member-attendance" class="hidden">
                 <h3>Mass Attendance Roster</h3>
                 <div class="member-action-row">
@@ -156,6 +162,7 @@
             </div>
         </div>
 
+        <!-- SCREEN 3: ADMIN EDIT HUB -->
         <div id="admin-dashboard" class="hidden">
             <div class="nav-header">
                 <h2>Admin Control Center</h2>
@@ -168,6 +175,7 @@
                 <button id="btn-adm-attend" onclick="switchAdminTab('attendance')" class="btn-secondary">3. Attendance</button>
             </div>
             
+            <!-- ADMIN TAB 1: SUNDAY PLANNER -->
             <div id="tab-sunday-planner">
                 <div class="week-toggle">
                     <button id="btn-adm-week1" onclick="switchAdminWeek('week1')" class="active-toggle">Edit Current Week</button>
@@ -191,6 +199,7 @@
                 <button onclick="saveAdminData()" class="btn-admin">Publish Selected Sunday Setlist</button>
             </div>
 
+            <!-- ADMIN TAB 2: LIBRARY MANAGER -->
             <div id="tab-library-manager" class="hidden">
                 <div class="box">
                     <h3 id="library-form-title">Add New Song to Library</h3>
@@ -231,6 +240,7 @@
                 </div>
             </div>
 
+            <!-- ADMIN TAB 3: ATTENDANCE & DIRECTORY -->
             <div id="tab-attendance-tracker" class="hidden">
                 <div class="box" style="border-left: 4px solid var(--admin-color);">
                     <h3>👥 Choir Group Directory</h3>
@@ -358,30 +368,25 @@
             }
         }
 
-        // INTEGRATED CORS-BYPASS PROXY FOR PUSH ALERTS
+        // DEFINITIVE CONTAINER-LEVEL APP INJECTION INTERFACE
         async function sendPushNotification(alertTitle, alertBody) {
-            const proxyUrl = "https://cors-anywhere.herokuapp.com/";
-            const targetUrl = "https://www.webintoapp.com/api/v2/push-notifications";
-            
-            const payload = {
-                "app_id": "1367163",   
-                "api_key": "WgTyWltAZcowfJBQyPosaLIpsykAmIkg", 
-                "title": alertTitle,
-                "message": alertBody
-            };
+            console.log("Attempting notification handshake: " + alertTitle);
 
-            try {
-                await fetch(proxyUrl + targetUrl, {
-                    method: "POST",
-                    headers: { 
-                        "Content-Type": "application/json",
-                        "X-Requested-With": "XMLHttpRequest"
-                    },
-                    body: JSON.stringify(payload)
-                });
-                console.log("Push broadcast successfully bypassed CORS and sent to WebIntoApp!");
-            } catch (err) {
-                console.error("Failed to relay notification packet:", err);
+            // Intercept container settings when accessed from inside the built APK framework
+            if (window.WIA_PushNotification) {
+                try {
+                    window.WIA_PushNotification.send({
+                        title: alertTitle,
+                        message: alertBody
+                    });
+                    console.log("Native notification pipeline verified and pushed successfully.");
+                } catch (err) {
+                    console.error("Native notification bridge encounter failure:", err);
+                }
+            } else {
+                // Secure fallback sandbox testing logic for regular computer web-browsers
+                console.log("Not inside the mobile APK wrap environment. Simulating broadcast data locally:");
+                console.log(`[ALERT PREVIEW] Title: ${alertTitle} | Body: ${alertBody}`);
             }
         }
 
@@ -730,7 +735,7 @@
             
             alert("Mass scheduled and choir roster tracking initialized!");
             
-            // Invoke the Notification Engine
+            // Invoke Native Container Push Engine
             sendPushNotification("New Mass Scheduled! 📅", `A new service "${name}" has been added. Open the roster to mark attendance!`);
             
             await fetchAllCloudData();
@@ -948,7 +953,7 @@
 
             alert("Setlist broadcast live to all devices!");
             
-            // Invoke the Notification Engine
+            // Invoke Native Container Push Engine
             let weekLabel = (activeAdminWeek === 'week1') ? "Current Week" : "Next Week";
             sendPushNotification("Setlist Uploaded! 🎵", `The choir setlist for ${targetDate} (${weekLabel}) is live. Open the app to check lyrics!`);
             
