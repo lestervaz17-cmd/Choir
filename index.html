@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Samelpada Choir Portal 1.0</title>
-    <!-- Include the Supabase Cloud Library Script -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -292,7 +291,6 @@
 
     <div class="container">
         
-        <!-- LOGIN ENTRY PANEL -->
         <div id="login-screen" class="login-wrapper">
             <div class="login-icon">🎵</div>
             <h2>Choir App Portal</h2>
@@ -306,7 +304,6 @@
             <p id="error-msg" style="color: #f87171; margin-top: 15px; font-size: 14px; font-weight: 500;" class="hidden">⚠️ Invalid access credentials. Try again.</p>
         </div>
 
-        <!-- SCREEN 2: MEMBER DASHBOARD -->
         <div id="member-dashboard" class="hidden">
             <div class="nav-header">
                 <h2 style="margin:0; font-size:24px;">Choir Portal</h2>
@@ -319,7 +316,6 @@
                 <button id="btn-mem-attend" onclick="switchMemberTab('attendance')">📋 Roster</button>
             </div>
 
-            <!-- MEMBER TAB 1: SUNDAY SETLISTS -->
             <div id="tab-member-sunday" class="hidden">
                 <div class="week-toggle">
                     <button id="btn-mem-week1" onclick="switchMemberWeek('week1')" class="active-toggle">Current Week</button>
@@ -329,7 +325,6 @@
                 <div id="setlist-render-area"></div>
             </div>
 
-            <!-- MEMBER TAB 2: FULL LIBRARY -->
             <div id="tab-member-library" class="hidden">
                 <h3>Master Hymn Database</h3>
                 <div class="filter-row">
@@ -339,7 +334,6 @@
                 <div id="member-library-render-area"></div>
             </div>
 
-            <!-- MEMBER TAB 3: ATTENDANCE ROSTER -->
             <div id="tab-member-attendance" class="hidden">
                 <h3>Mass Attendance Roster</h3>
                 <div class="member-action-row">
@@ -350,7 +344,6 @@
             </div>
         </div>
 
-        <!-- SCREEN 3: ADMIN DASHBOARD -->
         <div id="admin-dashboard" class="hidden">
             <div class="nav-header">
                 <h2 style="margin:0; font-size:24px;">Admin Control Center</h2>
@@ -363,7 +356,6 @@
                 <button id="btn-adm-attend" onclick="switchAdminTab('attendance')">3. Attendance</button>
             </div>
             
-            <!-- ADMIN TAB 1: SUNDAY PLANNER -->
             <div id="tab-sunday-planner" class="hidden">
                 <div class="week-toggle">
                     <button id="btn-adm-week1" onclick="switchAdminWeek('week1')" class="active-toggle">Edit Current Week</button>
@@ -387,7 +379,6 @@
                 <button onclick="saveAdminData()" class="btn-admin" style="width:100%; font-size:16px; padding:14px;">Publish Selected Sunday Setlist</button>
             </div>
 
-            <!-- ADMIN TAB 2: LIBRARY MANAGER -->
             <div id="tab-library-manager" class="hidden">
                 <div class="box">
                     <h3 id="library-form-title" style="margin-bottom:20px;">Add New Song to Library</h3>
@@ -428,7 +419,6 @@
                 </div>
             </div>
 
-            <!-- ADMIN TAB 3: ATTENDANCE & DIRECTORY -->
             <div id="tab-attendance-tracker" class="hidden">
                 <div class="box" style="border-left: 4px solid var(--admin-color);">
                     <h3 style="margin-bottom:15px;">👥 Choir Group Directory</h3>
@@ -495,13 +485,11 @@
             await fetchAllCloudData();
             updateIdentitySelectorsUI();
             
-            // INTENTIONAL LIVE-REPAINT HANDSHAKE VIA REALTIME BUS
             db.channel('cloud-sync')
                 .on('postgres_changes', { event: '*', schema: 'public' }, async () => {
                     await fetchAllCloudData();
                     updateIdentitySelectorsUI();
                     
-                    // Force visible interface blocks to re-render data layout metrics immediately
                     if (!document.getElementById('member-dashboard').classList.contains('hidden')) {
                         repaintVisibleMemberView();
                     } else if (!document.getElementById('admin-dashboard').classList.contains('hidden')) {
@@ -724,6 +712,7 @@
             });
         }
 
+        // FIXED MEMBER ROSTER HANDLER
         async function memberToggleSelf(massId, memberName, currentStatus) {
             const newStatus = (currentStatus === "Absent") ? "Present" : "Absent";
             const existingRecord = attendanceRecords.find(r => r.mass_id === massId && r.member_name === memberName);
@@ -733,7 +722,10 @@
             } else {
                 await db.from('attendance_records').insert([{ mass_id: massId, member_name: memberName, status: newStatus }]);
             }
-            // Realtime callback will catch this and auto-repaint!
+            
+            // Re-fetch all elements synchronously right after execution to complete the view update lifecycle
+            await fetchAllCloudData();
+            repaintVisibleMemberView();
         }
 
         function switchAdminTab(tabName) {
@@ -807,7 +799,6 @@
             editDateEl.value = targetWeekData.date || "";
             const formContainer = document.getElementById('admin-form-fields');
             
-            // Check if dropdown elements already exist to protect user focus states
             if (formContainer.children.length === sectionsList.length) {
                 sectionsList.forEach((section, index) => {
                     const select = document.getElementById(`select-${index}`);
@@ -986,6 +977,7 @@
             });
         }
 
+        // FIXED ADMIN ROSTER TOGGLE CHANNELS
         async function toggleAttendance(massId, memberName, currentStatus) {
             const newStatus = (currentStatus === "Absent") ? "Present" : "Absent";
             const existingRecord = attendanceRecords.find(r => r.mass_id === massId && r.member_name === memberName);
@@ -995,7 +987,10 @@
             } else {
                 await db.from('attendance_records').insert([{ mass_id: massId, member_name: memberName, status: newStatus }]);
             }
-            // Realtime callback handling takes care of repaint!
+            
+            // Secure step callback update logic
+            await fetchAllCloudData();
+            repaintVisibleAdminView();
         }
 
         async function deleteMass(massId) {
