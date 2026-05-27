@@ -220,9 +220,13 @@
             color: var(--text-muted);
             border-radius: 8px;
         }
-        .tab-buttons button.btn-admin { color: #ffffff; background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); }
-        .tab-buttons button.btn-library { color: #ffffff; background: linear-gradient(135deg, #9333ea 0%, #7e22ce 100%); }
-        .tab-buttons button.btn-attendance { color: #ffffff; background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%); }
+        .tab-buttons button.active-tab-adm-setlist { color: #ffffff; background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); }
+        .tab-buttons button.active-tab-adm-library { color: #ffffff; background: linear-gradient(135deg, #9333ea 0%, #7e22ce 100%); }
+        .tab-buttons button.active-tab-adm-attendance { color: #ffffff; background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%); }
+        
+        .tab-buttons button.active-tab-mem-sunday { color: #ffffff; background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); }
+        .tab-buttons button.active-tab-mem-library { color: #ffffff; background: linear-gradient(135deg, #9333ea 0%, #7e22ce 100%); }
+        .tab-buttons button.active-tab-mem-attendance { color: #ffffff; background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%); }
 
         .week-toggle { display: flex; gap: 6px; margin-bottom: 20px; background: rgba(10, 12, 20, 0.4); padding: 5px; border-radius: 10px; }
         .week-toggle button { margin: 0; padding: 8px; font-size: 13px; background: transparent; color: var(--text-muted); box-shadow: none; flex: 1; border-radius: 6px;}
@@ -288,7 +292,7 @@
 
     <div class="container">
         
-        <!-- UPGRADED PREMIUM LOGIN SCREEN -->
+        <!-- LOGIN ENTRY PANEL -->
         <div id="login-screen" class="login-wrapper">
             <div class="login-icon">🎵</div>
             <h2>Choir App Portal</h2>
@@ -302,7 +306,7 @@
             <p id="error-msg" style="color: #f87171; margin-top: 15px; font-size: 14px; font-weight: 500;" class="hidden">⚠️ Invalid access credentials. Try again.</p>
         </div>
 
-        <!-- SCREEN 2: MEMBER VIEW -->
+        <!-- SCREEN 2: MEMBER DASHBOARD -->
         <div id="member-dashboard" class="hidden">
             <div class="nav-header">
                 <h2 style="margin:0; font-size:24px;">Choir Portal</h2>
@@ -310,13 +314,13 @@
             </div>
 
             <div class="tab-buttons" id="member-tabs">
-                <button id="btn-mem-sunday" onclick="switchMemberTab('sunday')" class="btn-admin">📅 Setlists</button>
+                <button id="btn-mem-sunday" onclick="switchMemberTab('sunday')">📅 Setlists</button>
                 <button id="btn-mem-lib" onclick="switchMemberTab('library')">🎵 Library</button>
                 <button id="btn-mem-attend" onclick="switchMemberTab('attendance')">📋 Roster</button>
             </div>
 
             <!-- MEMBER TAB 1: SUNDAY SETLISTS -->
-            <div id="tab-member-sunday">
+            <div id="tab-member-sunday" class="hidden">
                 <div class="week-toggle">
                     <button id="btn-mem-week1" onclick="switchMemberWeek('week1')" class="active-toggle">Current Week</button>
                     <button id="btn-mem-week2" onclick="switchMemberWeek('week2')">Next Week</button>
@@ -346,7 +350,7 @@
             </div>
         </div>
 
-        <!-- SCREEN 3: ADMIN EDIT HUB -->
+        <!-- SCREEN 3: ADMIN DASHBOARD -->
         <div id="admin-dashboard" class="hidden">
             <div class="nav-header">
                 <h2 style="margin:0; font-size:24px;">Admin Control Center</h2>
@@ -354,13 +358,13 @@
             </div>
 
             <div class="tab-buttons" id="admin-tabs">
-                <button id="btn-adm-sunday" onclick="switchAdminTab('setlist')" class="btn-admin">1. Sunday</button>
+                <button id="btn-adm-sunday" onclick="switchAdminTab('setlist')">1. Sunday</button>
                 <button id="btn-adm-lib" onclick="switchAdminTab('library')">2. Library</button>
                 <button id="btn-adm-attend" onclick="switchAdminTab('attendance')">3. Attendance</button>
             </div>
             
             <!-- ADMIN TAB 1: SUNDAY PLANNER -->
-            <div id="tab-sunday-planner">
+            <div id="tab-sunday-planner" class="hidden">
                 <div class="week-toggle">
                     <button id="btn-adm-week1" onclick="switchAdminWeek('week1')" class="active-toggle">Edit Current Week</button>
                     <button id="btn-adm-week2" onclick="switchAdminWeek('week2')">Edit Next Week</button>
@@ -445,7 +449,7 @@
                 </div>
 
                 <div class="box">
-                    <h3 style="margin-bottom:15px;">Active Mass Checklists</h3>
+                    <h3>Active Mass Checklists</h3>
                     <div id="admin-mass-list" style="max-height: 450px; overflow-y: auto; padding-right:5px;"></div>
                 </div>
             </div>
@@ -454,7 +458,6 @@
     </div>
 
     <script>
-        // PERMANENT SYSTEM ENCRYPTED ROUTING STRINGS
         const CLOUD_URL = "https://oighotwtvrzyiqslpeso.supabase.co";
         const CLOUD_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pZ2hvdHd0dnJ6eWlxc2xwZXNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3NzAzNzIsImV4cCI6MjA5NTM0NjM3Mn0.t3zZqp_KSN3jwme7OSfA8SyGNDiEAWlETXeCxSxGt44";
         
@@ -476,11 +479,12 @@
         let scheduledMasses = [];
         let attendanceRecords = [];
 
+        let currentActiveTabMember = "sunday";
+        let currentActiveTabAdmin = "setlist";
         let activeMemberWeek = "week1";
         let activeAdminWeek = "week1";
         let editingSongId = null;
 
-        // Listen for the Enter key on the password input field
         document.getElementById('password-input').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 handleLogin();
@@ -491,19 +495,17 @@
             await fetchAllCloudData();
             updateIdentitySelectorsUI();
             
+            // INTENTIONAL LIVE-REPAINT HANDSHAKE VIA REALTIME BUS
             db.channel('cloud-sync')
                 .on('postgres_changes', { event: '*', schema: 'public' }, async () => {
                     await fetchAllCloudData();
                     updateIdentitySelectorsUI();
+                    
+                    // Force visible interface blocks to re-render data layout metrics immediately
                     if (!document.getElementById('member-dashboard').classList.contains('hidden')) {
-                        renderMemberSetlist();
-                        filterMemberLibrary();
-                        renderMemberAttendance();
+                        repaintVisibleMemberView();
                     } else if (!document.getElementById('admin-dashboard').classList.contains('hidden')) {
-                        filterAndRenderAdminLibrary();
-                        generateAdminForm();
-                        renderAdminAttendance();
-                        renderAdminDirectoryList();
+                        repaintVisibleAdminView();
                     }
                 })
                 .subscribe();
@@ -560,87 +562,39 @@
             }
         }
 
-        async function addNewChoirMember() {
-            const nameInput = document.getElementById('new-member-name').value.trim();
-            if (!nameInput) return alert("Please enter a member's name!");
-
-            let { error } = await db.from('choir_members_list').insert([{ name: nameInput }]);
-            if (error) {
-                if (error.code === '23505') return alert("This member name already exists!");
-                return alert("Database error adding member.");
-            }
-
-            if (scheduledMasses.length > 0) {
-                const autoRecords = scheduledMasses.map(mass => {
-                    return { mass_id: mass.id, member_name: nameInput, status: "Absent" };
-                });
-                await db.from('attendance_records').insert(autoRecords);
-            }
-
-            document.getElementById('new-member-name').value = "";
-            alert(`${nameInput} added to directory!`);
-            await fetchAllCloudData();
-            updateIdentitySelectorsUI();
-            renderAdminDirectoryList();
-            renderAdminAttendance();
-        }
-
-        async function removeChoirMember(name) {
-            if (confirm(`Remove ${name} from the choir group?`)) {
-                await db.from('choir_members_list').delete().eq('name', name);
-                await db.from('attendance_records').delete().eq('member_name', name);
-                await fetchAllCloudData();
-                updateIdentitySelectorsUI();
-                renderAdminDirectoryList();
-                renderAdminAttendance();
-            }
-        }
-
-        function renderAdminDirectoryList() {
-            const container = document.getElementById('admin-directory-list');
-            if(!container) return;
-            container.innerHTML = "";
-
-            if (choirMembers.length === 0) {
-                container.innerHTML = `<p style="color:#888; text-align:center; margin:0;">No members listed.</p>`;
-                return;
-            }
-
-            choirMembers.forEach(member => {
-                const div = document.createElement('div');
-                div.style = "display:flex; justify-content:space-between; align-items:center; padding: 6px 0; border-bottom:1px solid rgba(255,255,255,0.04);";
-                div.innerHTML = `
-                    <span>👤 ${member}</span>
-                    <button class="btn-danger" style="padding:2px 6px; font-size:11px;" onclick="removeChoirMember('${member}')">Remove</button>
-                `;
-                container.appendChild(div);
-            });
-        }
-
         function switchMemberTab(tab) {
-            const btnSunday = document.getElementById('btn-mem-sunday');
-            const btnLib = document.getElementById('btn-mem-lib');
-            const btnAttend = document.getElementById('btn-mem-attend');
+            currentActiveTabMember = tab;
             
             document.getElementById('tab-member-sunday').classList.add('hidden');
             document.getElementById('tab-member-library').classList.add('hidden');
             document.getElementById('tab-member-attendance').classList.add('hidden');
             
+            const btnSunday = document.getElementById('btn-mem-sunday');
+            const btnLib = document.getElementById('btn-mem-lib');
+            const btnAttend = document.getElementById('btn-mem-attend');
             [btnSunday, btnLib, btnAttend].forEach(btn => btn.className = "");
 
             if (tab === 'sunday') {
                 document.getElementById('tab-member-sunday').classList.remove('hidden');
-                btnSunday.className = "btn-admin";
-                renderMemberSetlist();
+                btnSunday.className = "active-tab-mem-sunday";
             } else if (tab === 'library') {
                 document.getElementById('tab-member-library').classList.remove('hidden');
-                btnLib.className = "btn-library";
+                btnLib.className = "active-tab-mem-library";
                 document.getElementById('member-search').value = "";
                 document.getElementById('member-filter-category').value = "ALL";
-                filterMemberLibrary();
             } else if (tab === 'attendance') {
                 document.getElementById('tab-member-attendance').classList.remove('hidden');
-                btnAttend.className = "btn-attendance";
+                btnAttend.className = "active-tab-mem-attendance";
+            }
+            repaintVisibleMemberView();
+        }
+
+        function repaintVisibleMemberView() {
+            if (currentActiveTabMember === 'sunday') {
+                renderMemberSetlist();
+            } else if (currentActiveTabMember === 'library') {
+                filterMemberLibrary();
+            } else if (currentActiveTabMember === 'attendance') {
                 renderMemberAttendance();
             }
         }
@@ -779,9 +733,46 @@
             } else {
                 await db.from('attendance_records').insert([{ mass_id: massId, member_name: memberName, status: newStatus }]);
             }
+            // Realtime callback will catch this and auto-repaint!
+        }
 
-            await fetchAllCloudData();
-            renderMemberAttendance();
+        function switchAdminTab(tabName) {
+            currentActiveTabAdmin = tabName;
+            
+            document.getElementById('tab-sunday-planner').classList.add('hidden');
+            document.getElementById('tab-library-manager').classList.add('hidden');
+            document.getElementById('tab-attendance-tracker').classList.add('hidden');
+            
+            const btnSunday = document.getElementById('btn-adm-sunday');
+            const btnLib = document.getElementById('btn-adm-lib');
+            const btnAttend = document.getElementById('btn-adm-attend');
+            [btnSunday, btnLib, btnAttend].forEach(btn => btn.className = "");
+
+            if (tabName === 'setlist') {
+                document.getElementById('tab-sunday-planner').classList.remove('hidden');
+                btnSunday.className = "active-tab-adm-setlist";
+            } else if (tabName === 'library') {
+                document.getElementById('tab-library-manager').classList.remove('hidden');
+                btnLib.className = "active-tab-adm-library";
+                cancelLibraryEdit();
+                document.getElementById('admin-search').value = "";
+                document.getElementById('admin-filter-category').value = "ALL";
+            } else if (tabName === 'attendance') {
+                document.getElementById('tab-attendance-tracker').classList.remove('hidden');
+                btnAttend.className = "active-tab-adm-attendance";
+            }
+            repaintVisibleAdminView();
+        }
+
+        function repaintVisibleAdminView() {
+            if (currentActiveTabAdmin === 'setlist') {
+                switchAdminWeek(activeAdminWeek);
+            } else if (currentActiveTabAdmin === 'library') {
+                filterAndRenderAdminLibrary();
+            } else if (currentActiveTabAdmin === 'attendance') {
+                renderAdminAttendance();
+                renderAdminDirectoryList();
+            }
         }
 
         function switchAdminWeek(weekKey) {
@@ -809,44 +800,33 @@
             }
         }
 
-        function switchAdminTab(tabName) {
-            const btnSunday = document.getElementById('btn-adm-sunday');
-            const btnLib = document.getElementById('btn-adm-lib');
-            const btnAttend = document.getElementById('btn-adm-attend');
-            
-            document.getElementById('tab-sunday-planner').classList.add('hidden');
-            document.getElementById('tab-library-manager').classList.add('hidden');
-            document.getElementById('tab-attendance-tracker').classList.add('hidden');
-            
-            [btnSunday, btnLib, btnAttend].forEach(btn => btn.className = "");
-
-            if (tabName === 'setlist') {
-                document.getElementById('tab-sunday-planner').classList.remove('hidden');
-                btnSunday.className = "btn-admin";
-                switchAdminWeek(activeAdminWeek);
-            } else if (tabName === 'library') {
-                document.getElementById('tab-library-manager').classList.remove('hidden');
-                btnLib.className = "btn-library";
-                cancelLibraryEdit();
-                document.getElementById('admin-search').value = "";
-                document.getElementById('admin-filter-category').value = "ALL";
-                filterAndRenderAdminLibrary();
-            } else if (tabName === 'attendance') {
-                document.getElementById('tab-attendance-tracker').classList.remove('hidden');
-                btnAttend.className = "btn-attendance";
-                renderAdminAttendance();
-                renderAdminDirectoryList();
-            }
-        }
-
         function generateAdminForm() {
             const targetWeekData = (activeAdminWeek === 'week1') ? week1Data : week2Data;
             const editDateEl = document.getElementById('edit-date');
             if(!editDateEl) return;
             editDateEl.value = targetWeekData.date || "";
             const formContainer = document.getElementById('admin-form-fields');
-            formContainer.innerHTML = "";
+            
+            // Check if dropdown elements already exist to protect user focus states
+            if (formContainer.children.length === sectionsList.length) {
+                sectionsList.forEach((section, index) => {
+                    const select = document.getElementById(`select-${index}`);
+                    if (select) {
+                        const currentVal = select.value;
+                        let optionsHtml = `<option value="">-- Skip Section --</option>`;
+                        masterLibrary.filter(song => song.category === section)
+                                      .sort((a,b) => a.title.localeCompare(b.title))
+                                      .forEach(song => {
+                                          optionsHtml += `<option value="${song.title}">${song.title}</option>`;
+                                      });
+                        select.innerHTML = optionsHtml;
+                        select.value = currentVal;
+                    }
+                });
+                return;
+            }
 
+            formContainer.innerHTML = "";
             sectionsList.forEach((section, index) => {
                 const group = document.createElement('div');
                 group.className = "form-group";
@@ -885,6 +865,59 @@
             }
         }
 
+        async function addNewChoirMember() {
+            const nameInput = document.getElementById('new-member-name').value.trim();
+            if (!nameInput) return alert("Please enter a member's name!");
+
+            let { error } = await db.from('choir_members_list').insert([{ name: nameInput }]);
+            if (error) {
+                if (error.code === '23505') return alert("This member name already exists!");
+                return alert("Database error adding member.");
+            }
+
+            if (scheduledMasses.length > 0) {
+                const autoRecords = scheduledMasses.map(mass => {
+                    return { mass_id: mass.id, member_name: nameInput, status: "Absent" };
+                });
+                await db.from('attendance_records').insert(autoRecords);
+            }
+
+            document.getElementById('new-member-name').value = "";
+            alert(`${nameInput} added to directory!`);
+            await fetchAllCloudData();
+            repaintVisibleAdminView();
+        }
+
+        async function removeChoirMember(name) {
+            if (confirm(`Remove ${name} from the choir group?`)) {
+                await db.from('choir_members_list').delete().eq('name', name);
+                await db.from('attendance_records').delete().eq('member_name', name);
+                await fetchAllCloudData();
+                repaintVisibleAdminView();
+            }
+        }
+
+        function renderAdminDirectoryList() {
+            const container = document.getElementById('admin-directory-list');
+            if(!container) return;
+            container.innerHTML = "";
+
+            if (choirMembers.length === 0) {
+                container.innerHTML = `<p style="color:#888; text-align:center; margin:0;">No members listed.</p>`;
+                return;
+            }
+
+            choirMembers.forEach(member => {
+                const div = document.createElement('div');
+                div.style = "display:flex; justify-content:space-between; align-items:center; padding: 6px 0; border-bottom:1px solid rgba(255,255,255,0.04);";
+                div.innerHTML = `
+                    <span>👤 ${member}</span>
+                    <button class="btn-danger" style="padding:2px 6px; font-size:11px;" onclick="removeChoirMember('${member}')">Remove</button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
         async function createNewMass() {
             const name = document.getElementById('attend-mass-name').value.trim();
             const date = document.getElementById('attend-mass-date').value.trim();
@@ -904,9 +937,8 @@
             document.getElementById('attend-mass-date').value = "";
             
             alert("Mass scheduled and choir roster tracking initialized!");
-            
             await fetchAllCloudData();
-            renderAdminAttendance();
+            repaintVisibleAdminView();
         }
 
         function renderAdminAttendance() {
@@ -963,16 +995,14 @@
             } else {
                 await db.from('attendance_records').insert([{ mass_id: massId, member_name: memberName, status: newStatus }]);
             }
-
-            await fetchAllCloudData();
-            renderAdminAttendance();
+            // Realtime callback handling takes care of repaint!
         }
 
         async function deleteMass(massId) {
             if (confirm("Permanently delete this Mass profile?")) {
                 await db.from('attendance_masses').delete().eq('id', massId);
                 await fetchAllCloudData();
-                renderAdminAttendance();
+                repaintVisibleAdminView();
             }
         }
 
@@ -995,7 +1025,7 @@
             
             clearLibraryForm();
             await fetchAllCloudData();
-            filterAndRenderAdminLibrary();
+            repaintVisibleAdminView();
         }
 
         function startEditHymn(id) {
@@ -1033,14 +1063,14 @@
             
             cancelLibraryEdit();
             await fetchAllCloudData();
-            filterAndRenderAdminLibrary();
+            repaintVisibleAdminView();
         }
 
         async function deleteHymn(id) {
             if (confirm("Permanently delete this song from cloud?")) {
                 await db.from('hymns_library').delete().eq('id', id);
                 await fetchAllCloudData();
-                filterAndRenderAdminLibrary();
+                repaintVisibleAdminView();
             }
         }
 
