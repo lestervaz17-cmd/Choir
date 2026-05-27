@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Choir Portal - Advanced Cloud Sync Hub</title>
+    <title>Choir Portal - Advanced Library Management Hub</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -66,6 +66,8 @@
         .hymn-card.lib-card { border-left-color: var(--library-color); }
         .hymn-section { font-size: 11px; text-transform: uppercase; color: #888; letter-spacing: 1px; }
         .hymn-title { font-size: 18px; font-weight: bold; margin: 5px 0; color: #fff; }
+        .hymn-meta { font-size: 13px; color: #aaa; margin: 4px 0 8px 0; display: flex; gap: 12px; }
+        .meta-tag { background: #2a2a2a; padding: 2px 6px; border-radius: 4px; border: 1px solid #444; }
         .lyrics { margin-top: 10px; white-space: pre-line; color: #ccc; line-height: 1.6; font-size: 17px; display: none; }
         .active .lyrics { display: block; }
         
@@ -79,12 +81,16 @@
         .week-toggle button { margin: 0; padding: 8px; font-size: 13px; }
         .active-toggle { background: #444 !important; border: 1px solid #666; }
         
-        .search-bar { background: #2a2a2a; border: 1px solid #333; color: white; padding: 10px; border-radius: 6px; margin-bottom: 15px; width: 100%; box-sizing: border-box; font-size: 16px;}
         .lib-item { padding: 10px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
         .lib-actions { display: flex; align-items: center; }
         
         .filter-row { display: flex; gap: 10px; margin-bottom: 15px; }
         .filter-row input, .filter-row select { margin: 0; }
+        
+        /* Layout helpers for parallel form parameters */
+        .form-row { display: flex; gap: 10px; }
+        .form-row div { flex: 1; }
+        .form-row label { font-size: 14px; color: #aaa; }
     </style>
 </head>
 <body>
@@ -121,7 +127,13 @@
 
             <div id="tab-member-library" class="hidden">
                 <h3>Master Hymn Database</h3>
-                <input type="text" id="member-search" class="search-bar" placeholder="🔍 Search hymns by title..." oninput="filterMemberLibrary()">
+                
+                <div class="filter-row">
+                    <input type="text" id="member-search" placeholder="🔍 Search hymns by title..." oninput="filterMemberLibrary()">
+                    <select id="member-filter-category" onchange="filterMemberLibrary()">
+                        </select>
+                </div>
+                
                 <div id="member-library-render-area"></div>
             </div>
         </div>
@@ -168,6 +180,17 @@
                     
                     <label>Liturgical Category:</label>
                     <select id="lib-new-category"></select>
+                    
+                    <div class="form-row">
+                        <div>
+                            <label>Joyful Celebration No:</label>
+                            <input type="text" id="lib-new-jc" placeholder="e.g., 204">
+                        </div>
+                        <div>
+                            <label>Joyful Lips No:</label>
+                            <input type="text" id="lib-new-jl" placeholder="e.g., 45">
+                        </div>
+                    </div>
                     
                     <label>Song Lyrics:</label>
                     <textarea id="lib-new-lyrics" placeholder="Paste entire song lyrics here..."></textarea>
@@ -263,6 +286,7 @@
             } else if (pin === MEMBER_KEY) {
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('member-dashboard').classList.remove('hidden');
+                setupCategoryDropdowns();
                 switchMemberTab('sunday');
             } else {
                 document.getElementById('error-msg').classList.remove('hidden');
@@ -282,7 +306,8 @@
                 document.getElementById('tab-member-library').classList.remove('hidden');
                 btnSunday.className = "btn-secondary"; btnLib.className = "btn-library";
                 document.getElementById('member-search').value = "";
-                renderMemberLibrary(masterLibrary);
+                document.getElementById('member-filter-category').value = "ALL";
+                filterMemberLibrary();
             }
         }
 
@@ -309,9 +334,20 @@
                     const card = document.createElement('div');
                     card.className = "hymn-card";
                     card.onclick = function() { this.classList.toggle('active'); };
+                    
+                    // Display book numbers inside the active setlist cards if they exist
+                    let metaHtml = "";
+                    if (hymn.jc_no || hymn.jl_no) {
+                        metaHtml = `<div class="hymn-meta">`;
+                        if (hymn.jc_no) metaHtml += `<span class="meta-tag">JC: ${hymn.jc_no}</span>`;
+                        if (hymn.jl_no) metaHtml += `<span class="meta-tag">JL: ${hymn.jl_no}</span>`;
+                        metaHtml += `</div>`;
+                    }
+
                     card.innerHTML = `
                         <div class="hymn-section">${hymn.section}</div>
                         <div class="hymn-title">${hymn.title}</div>
+                        ${metaHtml}
                         <div class="lyrics">${hymn.lyrics || 'No lyrics provided.'}</div>
                     `;
                     container.appendChild(card);
@@ -319,31 +355,48 @@
             });
         }
 
-        function renderMemberLibrary(songsToDisplay) {
+        // UPGRADED CHOIR DISPLAY FILTER ROUTINE (With Book Tags & A-Z Sorting)
+        function filterMemberLibrary() {
+            const query = document.getElementById('member-search').value.toLowerCase().trim();
+            const selectedCat = document.getElementById('member-filter-category').value;
             const container = document.getElementById('member-library-render-area');
             container.innerHTML = "";
-            if (songsToDisplay.length === 0) {
+
+            let filtered = masterLibrary.filter(song => {
+                const matchesSearch = song.title.toLowerCase().includes(query);
+                const matchesCat = (selectedCat === "ALL" || song.category === selectedCat);
+                return matchesSearch && matchesCat;
+            });
+
+            // Sort alphabetical from A to Z
+            filtered.sort((a,b) => a.title.localeCompare(b.title));
+
+            if (filtered.length === 0) {
                 container.innerHTML = `<p style="text-align:center; color:#888;">No matching songs found.</p>`;
                 return;
             }
-            const sortedSongs = [...songsToDisplay].sort((a,b) => a.title.localeCompare(b.title));
-            sortedSongs.forEach(song => {
+
+            filtered.forEach(song => {
                 const card = document.createElement('div');
                 card.className = "hymn-card lib-card";
                 card.onclick = function() { this.classList.toggle('active'); };
+                
+                let metaHtml = "";
+                if (song.jc_no || song.jl_no) {
+                    metaHtml = `<div class="hymn-meta">`;
+                    if (song.jc_no) metaHtml += `<span class="meta-tag">JC: ${song.jc_no}</span>`;
+                    if (song.jl_no) metaHtml += `<span class="meta-tag">JL: ${song.jl_no}</span>`;
+                    metaHtml += `</div>`;
+                }
+
                 card.innerHTML = `
                     <div class="hymn-section" style="color: var(--library-color);">${song.category}</div>
                     <div class="hymn-title">${song.title}</div>
+                    ${metaHtml}
                     <div class="lyrics">${song.lyrics}</div>
                 `;
                 container.appendChild(card);
             });
-        }
-
-        function filterMemberLibrary() {
-            const query = document.getElementById('member-search').value.toLowerCase().trim();
-            const filtered = masterLibrary.filter(song => song.title.toLowerCase().includes(query));
-            renderMemberLibrary(filtered);
         }
 
         function switchAdminWeek(weekKey) {
@@ -351,13 +404,9 @@
             document.getElementById('btn-adm-week1').className = (weekKey === 'week1') ? "active-toggle" : "";
             document.getElementById('btn-adm-week2').className = (weekKey === 'week2') ? "active-toggle" : "";
             
-            // Show the copy option ONLY when viewing the 'Next Week' editing board
             const shiftBtnBlock = document.getElementById('shift-action-container');
-            if (weekKey === 'week2') {
-                shiftBtnBlock.classList.remove('hidden');
-            } else {
-                shiftBtnBlock.classList.add('hidden');
-            }
+            if (weekKey === 'week2') shiftBtnBlock.classList.remove('hidden');
+            else shiftBtnBlock.classList.add('hidden');
 
             generateAdminForm();
         }
@@ -366,9 +415,16 @@
             const dropdown = document.getElementById('lib-new-category');
             dropdown.innerHTML = sectionsList.map(sec => `<option value="${sec}">${sec}</option>`).join('');
 
-            const filterDropdown = document.getElementById('admin-filter-category');
-            filterDropdown.innerHTML = `<option value="ALL">✨ Show All Categories</option>` + 
+            const adminFilterDropdown = document.getElementById('admin-filter-category');
+            adminFilterDropdown.innerHTML = `<option value="ALL">✨ Show All Categories</option>` + 
                 sectionsList.map(sec => `<option value="${sec}">${sec}</option>`).join('');
+
+            // Added dropdown renderer for members layout filter board
+            const memberFilterDropdown = document.getElementById('member-filter-category');
+            if (memberFilterDropdown) {
+                memberFilterDropdown.innerHTML = `<option value="ALL">✨ All Categories</option>` + 
+                    sectionsList.map(sec => `<option value="${sec}">${sec}</option>`).join('');
+            }
         }
 
         function switchAdminTab(tabName) {
@@ -420,34 +476,40 @@
             });
         }
 
-        // NEW ENGINE FUNCTION: Clones Next Week (week2) into Current Week (week1) in the cloud database
         async function shiftNextWeekToCurrent() {
-            if (week2Data.hymns.length === 0) {
-                return alert("Next week's setlist is completely empty! Add some songs before copying.");
-            }
+            if (week2Data.hymns.length === 0) return alert("Next week's setlist is completely empty!");
 
-            if (confirm("Are you sure you want to overwrite your Current Week setlist with everything planned in Next Week?")) {
-                // Update row 'week1' using the exact array data stored in 'week2'
+            if (confirm("Are you sure you want to shift Next Week's setlist into Current Week?")) {
                 await db.from('schedules').upsert({ 
                     week_key: "week1", 
                     sunday_date: week2Data.date, 
                     hymns_array: week2Data.hymns 
                 }, { onConflict: 'week_key' });
 
-                alert("Success! Next week's schedule has been pasted into Current Week and broadcast to all phones!");
+                alert("Success! Schedule pushed to Current Week.");
                 await fetchAllCloudData();
-                switchAdminWeek('week1'); // Take admin back to view the newly updated Current Week panel
+                switchAdminWeek('week1');
             }
         }
 
         async function addNewSongToLibrary() {
             const titleInput = document.getElementById('lib-new-title').value.trim();
             const categoryInput = document.getElementById('lib-new-category').value;
+            const jcInput = document.getElementById('lib-new-jc').value.trim();
+            const jlInput = document.getElementById('lib-new-jl').value.trim();
             const lyricsInput = document.getElementById('lib-new-lyrics').value.trim();
 
             if (!titleInput || !lyricsInput) return alert("Please fill out all fields!");
 
-            await db.from('hymns_library').insert([{ title: titleInput, category: categoryInput, lyrics: lyricsInput }]);
+            // Updated insertion packet adding the new book dimensions
+            await db.from('hymns_library').insert([{ 
+                title: titleInput, 
+                category: categoryInput, 
+                jc_no: jcInput, 
+                jl_no: jlInput, 
+                lyrics: lyricsInput 
+            }]);
+            
             clearLibraryForm();
             await fetchAllCloudData();
             filterAndRenderAdminLibrary();
@@ -461,6 +523,8 @@
             document.getElementById('library-form-title').innerText = "✏️ Edit Existing Song";
             document.getElementById('lib-new-title').value = song.title;
             document.getElementById('lib-new-category').value = song.category;
+            document.getElementById('lib-new-jc').value = song.jc_no || "";
+            document.getElementById('lib-new-jl').value = song.jl_no || "";
             document.getElementById('lib-new-lyrics').value = song.lyrics;
 
             document.getElementById('btn-library-save').classList.add('hidden');
@@ -472,9 +536,17 @@
             if (!editingSongId) return;
             const newTitle = document.getElementById('lib-new-title').value.trim();
             const newCategory = document.getElementById('lib-new-category').value;
+            const newJc = document.getElementById('lib-new-jc').value.trim();
+            const newJl = document.getElementById('lib-new-jl').value.trim();
             const newLyrics = document.getElementById('lib-new-lyrics').value.trim();
 
-            await db.from('hymns_library').update({ title: newTitle, category: newCategory, lyrics: newLyrics }).eq('id', editingSongId);
+            await db.from('hymns_library').update({ 
+                title: newTitle, 
+                category: newCategory, 
+                jc_no: newJc, 
+                jl_no: newJl, 
+                lyrics: newLyrics 
+            }).eq('id', editingSongId);
             
             cancelLibraryEdit();
             await fetchAllCloudData();
@@ -499,6 +571,8 @@
 
         function clearLibraryForm() {
             document.getElementById('lib-new-title').value = "";
+            document.getElementById('lib-new-jc').value = "";
+            document.getElementById('lib-new-jl').value = "";
             document.getElementById('lib-new-lyrics').value = "";
         }
 
@@ -524,8 +598,13 @@
             filteredList.forEach((song) => {
                 const item = document.createElement('div');
                 item.className = "lib-item";
+                
+                let labels = "";
+                if(song.jc_no) labels += ` <span style="font-size:10px; background:#333; padding:1px 4px; border-radius:3px; color:#aaa">JC:${song.jc_no}</span>`;
+                if(song.jl_no) labels += ` <span style="font-size:10px; background:#333; padding:1px 4px; border-radius:3px; color:#aaa">JL:${song.jl_no}</span>`;
+
                 item.innerHTML = `
-                    <div><b>${song.title}</b><br><span style="color:var(--library-color); font-size:11px;">${song.category}</span></div>
+                    <div><b>${song.title}</b>${labels}<br><span style="color:var(--library-color); font-size:11px;">${song.category}</span></div>
                     <div class="lib-actions">
                         <button onclick="startEditHymn(${song.id})" class="btn-edit">✏️</button>
                         <button onclick="deleteHymn(${song.id})" class="btn-danger">🗑️</button>
@@ -540,7 +619,13 @@
             const compiledHymns = sectionsList.map((section, index) => {
                 const selectedTitle = document.getElementById(`select-${index}`).value;
                 const matchedSong = masterLibrary.find(s => s.title === selectedTitle);
-                return { section: section, title: selectedTitle, lyrics: matchedSong ? matchedSong.lyrics : "" };
+                return { 
+                    section: section, 
+                    title: selectedTitle, 
+                    jc_no: matchedSong ? matchedSong.jc_no : "",
+                    jl_no: matchedSong ? matchedSong.jl_no : "",
+                    lyrics: matchedSong ? matchedSong.lyrics : "" 
+                };
             });
 
             await db.from('schedules').upsert({ 
