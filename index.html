@@ -8,63 +8,80 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
-            --bg-color: #0f111a;
-            --card-bg: #1e1e1e;
-            --text-color: #e0e0e0;
-            --accent-color: #2196F3;
-            --admin-color: #4caf50;
-            --library-color: #9c27b0;
-            --danger-color: #f44336;
-            --attendance-color: #ff9800;
+            --bg-gradient: linear-gradient(135deg, #0a0c14 0%, #121624 100%);
+            --card-bg: rgba(30, 35, 55, 0.65);
+            --card-border: rgba(255, 255, 255, 0.06);
+            --text-color: #e2e8f0;
+            --text-muted: #8fa0b5;
+            --accent-color: #38bdf8;
+            --accent-glow: rgba(56, 189, 248, 0.15);
+            --admin-color: #4ade80;
+            --library-color: #c084fc;
+            --danger-color: #f87171;
+            --attendance-color: #fb923c;
         }
+        
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: linear-gradient(135deg, #0f111a 0%, #151926 100%);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-gradient);
             color: var(--text-color);
             margin: 0;
-            padding: 15px;
+            padding: 20px 15px;
             display: flex;
             justify-content: center;
             min-height: 100vh;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
         }
-        .container { width: 100%; max-width: 600px; }
+        
+        .container { 
+            width: 100%; 
+            max-width: 600px; 
+            animation: fadeIn 0.4s ease-out;
+        }
+        
         .hidden { display: none !important; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
         
         /* Premium Attractive Glassmorphism Login Styling */
         .login-wrapper {
             margin-top: 10vh;
-            background: rgba(30, 30, 30, 0.65);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             padding: 40px 30px;
             border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+            border: 1px solid var(--card-border);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
             text-align: center;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
         .login-wrapper:hover {
             transform: translateY(-2px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6);
         }
         .login-icon {
-            font-size: 42px;
-            margin-bottom: 10px;
+            font-size: 46px;
+            margin-bottom: 12px;
             display: inline-block;
-            background: linear-gradient(135deg, #2196F3, #9c27b0);
+            background: linear-gradient(135deg, var(--accent-color), var(--library-color));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
         .login-wrapper h2 {
             margin: 0 0 8px 0;
-            font-size: 26px;
+            font-size: 28px;
             font-weight: 700;
             letter-spacing: -0.5px;
             color: #ffffff;
         }
         .login-wrapper p {
             margin: 0 0 25px 0;
-            color: #8fa0b5;
+            color: var(--text-muted);
             font-size: 15px;
         }
         .login-input-wrapper {
@@ -74,9 +91,9 @@
         .login-input-wrapper input {
             width: 100%;
             padding: 14px 16px;
-            background: rgba(15, 17, 26, 0.7);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
+            background: rgba(10, 12, 20, 0.6);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
             color: #ffffff;
             font-size: 16px;
             box-sizing: border-box;
@@ -87,104 +104,184 @@
         .login-input-wrapper input:focus {
             outline: none;
             border-color: var(--accent-color);
-            background: rgba(15, 17, 26, 0.9);
-            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.15);
+            background: rgba(10, 12, 20, 0.8);
+            box-shadow: 0 0 0 3px var(--accent-glow);
         }
         .login-btn {
-            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
             color: white;
             font-weight: 600;
             padding: 14px;
             border: none;
-            border-radius: 10px;
+            border-radius: 12px;
             font-size: 16px;
             cursor: pointer;
             transition: all 0.2s ease;
-            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+            box-shadow: 0 4px 12px rgba(3, 105, 161, 0.3);
         }
         .login-btn:hover {
-            opacity: 0.95;
-            box-shadow: 0 6px 16px rgba(33, 150, 243, 0.4);
+            box-shadow: 0 6px 20px rgba(3, 105, 161, 0.45);
             transform: translateY(-1px);
         }
-        .login-btn:active {
-            transform: translateY(1px);
-        }
         
-        /* Dashboard Styling Modules */
+        /* Elite Module Containers */
         .box {
             background: var(--card-bg);
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             margin-bottom: 20px;
-            border: 1px solid rgba(255,255,255,0.03);
+            border: 1px solid var(--card-border);
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        h2, h3, h4 {
+            color: #ffffff;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+            margin-top: 0;
         }
         
-        input, textarea, select, button {
+        /* Premium Form Control Styling */
+        input, textarea, select {
             width: 100%;
-            padding: 12px;
-            margin: 8px 0;
-            border-radius: 6px;
-            border: 1px solid #333;
+            padding: 12px 14px;
+            margin: 8px 0 16px 0;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(15, 20, 35, 0.6);
+            color: #ffffff;
             box-sizing: border-box;
-            font-size: 16px;
+            font-size: 15px;
+            transition: all 0.2s ease;
         }
-        input, textarea, select { background: #2a2a2a; color: white; }
-        textarea { height: 100px; resize: vertical; }
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            background: rgba(15, 20, 35, 0.8);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+        label {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        textarea { height: 110px; resize: vertical; }
         
-        button { background: var(--accent-color); color: white; font-weight: bold; cursor: pointer; border: none;}
-        .btn-admin { background: var(--admin-color); }
-        .btn-library { background: var(--library-color); }
-        .btn-attendance { background: var(--attendance-color); }
-        .btn-secondary { background: #555; }
-        .btn-danger { background: var(--danger-color); padding: 6px 10px; width: auto; font-size: 13px; margin: 0;}
-        .btn-edit { background: #ff9800; padding: 6px 10px; width: auto; font-size: 13px; margin: 0; margin-right: 5px;}
-        .btn-shift { background: #e91e63; margin-top: 5px; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        /* Elite Button Systems */
+        button { 
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); 
+            color: white; 
+            font-weight: 600; 
+            cursor: pointer; 
+            border: none;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 15px;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(3, 105, 161, 0.25);
+        }
+        button:hover {
+            transform: translateY(-1px);
+            filter: brightness(1.1);
+        }
+        button:active { transform: translateY(1px); }
+
+        .btn-admin { background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25); }
+        .btn-library { background: linear-gradient(135deg, #9333ea 0%, #7e22ce 100%); box-shadow: 0 4px 12px rgba(147, 131, 234, 0.25); }
+        .btn-attendance { background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%); box-shadow: 0 4px 12px rgba(234, 88, 12, 0.25); }
+        .btn-secondary { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.05); color: var(--text-color); box-shadow: none; }
+        .btn-secondary:hover { background: rgba(255, 255, 255, 0.12); }
+        .btn-danger { background: #ef4444; padding: 6px 12px; width: auto; font-size: 13px; margin: 0; box-shadow: none; }
+        .btn-edit { background: #f59e0b; padding: 6px 12px; width: auto; font-size: 13px; margin: 0 5px 0 0; box-shadow: none; }
+        .btn-shift { background: linear-gradient(135deg, #db2777 0%, #be185d 100%); margin: 5px 0 20px 0; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(219, 39, 119, 0.25); }
         
-        .hymn-card {
-            background: var(--card-bg);
-            margin: 12px 0;
-            padding: 15px;
+        /* Premium Interactive Tab Systems */
+        .tab-buttons { 
+            display: flex; 
+            gap: 8px; 
+            margin-bottom: 20px; 
+            background: rgba(10, 12, 20, 0.4); 
+            padding: 6px; 
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+        }
+        .tab-buttons button { 
+            margin: 0; 
+            padding: 10px; 
+            font-size: 14px; 
+            flex: 1; 
+            box-shadow: none;
+            background: transparent;
+            color: var(--text-muted);
             border-radius: 8px;
+        }
+        .tab-buttons button.btn-admin { color: #ffffff; background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); }
+        .tab-buttons button.btn-library { color: #ffffff; background: linear-gradient(135deg, #9333ea 0%, #7e22ce 100%); }
+        .tab-buttons button.btn-attendance { color: #ffffff; background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%); }
+
+        .week-toggle { display: flex; gap: 6px; margin-bottom: 20px; background: rgba(10, 12, 20, 0.4); padding: 5px; border-radius: 10px; }
+        .week-toggle button { margin: 0; padding: 8px; font-size: 13px; background: transparent; color: var(--text-muted); box-shadow: none; flex: 1; border-radius: 6px;}
+        .active-toggle { background: rgba(255, 255, 255, 0.08) !important; color: #ffffff !important; border: 1px solid rgba(255, 255, 255, 0.05); }
+        
+        /* Elite Liturgical Hymn Cards */
+        .hymn-card {
+            background: rgba(255, 255, 255, 0.02);
+            margin: 14px 0;
+            padding: 18px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
             border-left: 4px solid var(--accent-color);
             cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .hymn-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: scale(1.01);
+            border-left-width: 6px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.25);
         }
         .hymn-card.lib-card { border-left-color: var(--library-color); }
-        .hymn-section { font-size: 11px; text-transform: uppercase; color: #888; letter-spacing: 1px; }
-        .hymn-title { font-size: 18px; font-weight: bold; margin: 5px 0; color: #fff; }
-        .hymn-meta { font-size: 13px; color: #aaa; margin: 4px 0 8px 0; display: flex; gap: 12px; }
-        .meta-tag { background: #2a2a2a; padding: 2px 6px; border-radius: 4px; border: 1px solid #444; }
-        .lyrics { margin-top: 10px; white-space: pre-line; color: #ccc; line-height: 1.6; font-size: 17px; display: none; }
+        .hymn-section { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 1.5px; }
+        .hymn-title { font-size: 20px; font-weight: 600; margin: 6px 0; color: #ffffff; }
+        .hymn-meta { font-size: 13px; color: var(--text-muted); margin: 6px 0 0 0; display: flex; gap: 10px; }
+        .meta-tag { background: rgba(10, 12, 20, 0.5); padding: 3px 8px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.05); font-weight: 500; font-size: 12px;}
+        
+        .lyrics { 
+            margin-top: 14px; 
+            white-space: pre-line; 
+            color: #cbd5e1; 
+            line-height: 1.7; 
+            font-size: 16px; 
+            display: none; 
+            padding-top: 14px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            animation: fadeIn 0.2s ease-out;
+        }
         .active .lyrics { display: block; }
         
-        .nav-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .form-group { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #333; }
-        
-        .tab-buttons { display: flex; gap: 10px; margin-bottom: 15px; }
-        .tab-buttons button { margin: 0; padding: 10px; font-size: 14px; }
-        
-        .week-toggle { display: flex; gap: 5px; margin-bottom: 15px; background: #222; padding: 5px; border-radius: 8px; }
-        .week-toggle button { margin: 0; padding: 8px; font-size: 13px; }
-        .active-toggle { background: #444 !important; border: 1px solid #666; }
-        
-        .lib-item { padding: 10px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
-        .lib-actions { display: flex; align-items: center; }
-        
-        .filter-row { display: flex; gap: 10px; margin-bottom: 15px; }
+        .nav-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .form-group { margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+        .filter-row { display: flex; gap: 10px; margin-bottom: 20px; }
         .filter-row input, .filter-row select { margin: 0; }
-        
-        .form-row { display: flex; gap: 10px; }
+        .form-row { display: flex; gap: 12px; }
         .form-row div { flex: 1; }
-        .form-row label { font-size: 14px; color: #aaa; }
 
-        .attendance-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #333; }
-        .attendance-status { font-weight: bold; padding: 4px 8px; border-radius: 4px; font-size: 13px; text-transform: uppercase;}
-        .status-present { background: rgba(76, 175, 80, 0.2); color: #4caf50; border: 1px solid #4caf50; }
-        .status-absent { background: rgba(244, 67, 54, 0.2); color: #f44336; border: 1px solid #f44336; }
-        .attendance-toggle-btn { width: auto; margin: 0; padding: 6px 12px; font-size: 13px; }
+        /* Glowing Attendance Modules */
+        .attendance-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+        .attendance-row span { font-weight: 500; }
+        .attendance-status { font-weight: 600; padding: 4px 10px; border-radius: 6px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;}
+        .status-present { background: rgba(74, 222, 128, 0.1); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.2); box-shadow: 0 0 10px rgba(74, 222, 128, 0.05); }
+        .status-absent { background: rgba(248, 113, 113, 0.1); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.2); }
+        .attendance-toggle-btn { width: auto; margin: 0; padding: 6px 14px; font-size: 13px; }
         
-        .member-action-row { background: #222; padding: 10px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #333; }
+        .lib-item { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.04); display: flex; justify-content: space-between; align-items: center; }
+        .lib-actions { display: flex; align-items: center; }
+        .member-action-row { background: rgba(10, 12, 20, 0.3); padding: 16px; border-radius: 10px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.03); }
     </style>
 </head>
 <body>
@@ -202,20 +299,20 @@
             </div>
             
             <button onclick="handleLogin()" class="login-btn">Enter Dashboard</button>
-            <p id="error-msg" style="color: #ff5252; margin-top: 15px; font-size: 14px; font-weight: 500;" class="hidden">⚠️ Invalid access credentials. Try again.</p>
+            <p id="error-msg" style="color: #f87171; margin-top: 15px; font-size: 14px; font-weight: 500;" class="hidden">⚠️ Invalid access credentials. Try again.</p>
         </div>
 
         <!-- SCREEN 2: MEMBER VIEW -->
         <div id="member-dashboard" class="hidden">
             <div class="nav-header">
-                <h2>Choir Portal</h2>
-                <button onclick="logout()" class="btn-secondary" style="width: auto; margin: 0; padding: 6px 12px; font-size: 14px;">Exit</button>
+                <h2 style="margin:0; font-size:24px;">Choir Portal</h2>
+                <button onclick="logout()" class="btn-secondary" style="width: auto; margin: 0; padding: 6px 14px; font-size: 14px;">Exit</button>
             </div>
 
-            <div class="tab-buttons">
+            <div class="tab-buttons" id="member-tabs">
                 <button id="btn-mem-sunday" onclick="switchMemberTab('sunday')" class="btn-admin">📅 Setlists</button>
-                <button id="btn-mem-lib" onclick="switchMemberTab('library')" class="btn-secondary">🎵 Library</button>
-                <button id="btn-mem-attend" onclick="switchMemberTab('attendance')" class="btn-secondary">📋 Roster</button>
+                <button id="btn-mem-lib" onclick="switchMemberTab('library')">🎵 Library</button>
+                <button id="btn-mem-attend" onclick="switchMemberTab('attendance')">📋 Roster</button>
             </div>
 
             <!-- MEMBER TAB 1: SUNDAY SETLISTS -->
@@ -224,7 +321,7 @@
                     <button id="btn-mem-week1" onclick="switchMemberWeek('week1')" class="active-toggle">Current Week</button>
                     <button id="btn-mem-week2" onclick="switchMemberWeek('week2')">Next Week</button>
                 </div>
-                <h3 id="view-date" style="color: var(--accent-color); margin-bottom: 10px;">Loading live database...</h3>
+                <h3 id="view-date" style="color: var(--accent-color); margin-bottom: 14px; font-size: 20px;">Loading live database...</h3>
                 <div id="setlist-render-area"></div>
             </div>
 
@@ -242,10 +339,8 @@
             <div id="tab-member-attendance" class="hidden">
                 <h3>Mass Attendance Roster</h3>
                 <div class="member-action-row">
-                    <label style="font-size: 14px; color: #aaa; font-weight: bold;">Select Your Name to Mark Attendance:</label>
-                    <select id="member-self-identity" onchange="renderMemberAttendance()">
-                        <option value="">-- Who are you? --</option>
-                    </select>
+                    <label style="font-weight: 600; display:block; margin-bottom:4px;">Select Your Name to Mark Attendance:</label>
+                    <select id="member-self-identity" onchange="renderMemberAttendance()" style="margin-bottom:0;"></select>
                 </div>
                 <div id="member-attendance-render-area"></div>
             </div>
@@ -254,14 +349,14 @@
         <!-- SCREEN 3: ADMIN EDIT HUB -->
         <div id="admin-dashboard" class="hidden">
             <div class="nav-header">
-                <h2>Admin Control Center</h2>
-                <button onclick="logout()" class="btn-secondary" style="width: auto; margin: 0; padding: 6px 12px; font-size: 14px;">Exit Admin</button>
+                <h2 style="margin:0; font-size:24px;">Admin Control Center</h2>
+                <button onclick="logout()" class="btn-secondary" style="width: auto; margin: 0; padding: 6px 14px; font-size: 14px;">Exit Admin</button>
             </div>
 
-            <div class="tab-buttons">
+            <div class="tab-buttons" id="admin-tabs">
                 <button id="btn-adm-sunday" onclick="switchAdminTab('setlist')" class="btn-admin">1. Sunday</button>
-                <button id="btn-adm-lib" onclick="switchAdminTab('library')" class="btn-secondary">2. Library</button>
-                <button id="btn-adm-attend" onclick="switchAdminTab('attendance')" class="btn-secondary">3. Attendance</button>
+                <button id="btn-adm-lib" onclick="switchAdminTab('library')">2. Library</button>
+                <button id="btn-adm-attend" onclick="switchAdminTab('attendance')">3. Attendance</button>
             </div>
             
             <!-- ADMIN TAB 1: SUNDAY PLANNER -->
@@ -281,17 +376,17 @@
                 </div>
 
                 <div class="box">
-                    <h3>Configure Liturgical Layout</h3>
+                    <h3 style="margin-bottom:20px;">Configure Liturgical Layout</h3>
                     <div id="admin-form-fields"></div>
                 </div>
 
-                <button onclick="saveAdminData()" class="btn-admin">Publish Selected Sunday Setlist</button>
+                <button onclick="saveAdminData()" class="btn-admin" style="width:100%; font-size:16px; padding:14px;">Publish Selected Sunday Setlist</button>
             </div>
 
             <!-- ADMIN TAB 2: LIBRARY MANAGER -->
             <div id="tab-library-manager" class="hidden">
                 <div class="box">
-                    <h3 id="library-form-title">Add New Song to Library</h3>
+                    <h3 id="library-form-title" style="margin-bottom:20px;">Add New Song to Library</h3>
                     <label>Song Title:</label>
                     <input type="text" id="lib-new-title" placeholder="e.g., Amazing Grace">
                     
@@ -312,46 +407,46 @@
                     <label>Song Lyrics:</label>
                     <textarea id="lib-new-lyrics" placeholder="Paste entire song lyrics here..."></textarea>
                     
-                    <button id="btn-library-save" onclick="addNewSongToLibrary()" class="btn-library">Save New Song</button>
-                    <div id="edit-action-block" class="hidden" style="display: flex; gap: 10px;">
-                        <button onclick="updateExistingSong()" class="btn-admin" style="margin: 0;">Update Changes</button>
-                        <button onclick="cancelLibraryEdit()" class="btn-secondary" style="margin: 0;">Cancel Edit</button>
+                    <button id="btn-library-save" onclick="addNewSongToLibrary()" class="btn-library" style="width:100%;">Save New Song</button>
+                    <div id="edit-action-block" class="hidden" style="display: flex; gap: 10px; width:100%;">
+                        <button onclick="updateExistingSong()" class="btn-admin" style="margin: 0; flex:1;">Update Changes</button>
+                        <button onclick="cancelLibraryEdit()" class="btn-secondary" style="margin: 0; flex:1;">Cancel Edit</button>
                     </div>
                 </div>
 
                 <div class="box">
-                    <h3>Your Saved Songs Master List</h3>
+                    <h3 style="margin-bottom:20px;">Your Saved Songs Master List</h3>
                     <div class="filter-row">
                         <input type="text" id="admin-search" placeholder="🔍 Search by title..." oninput="filterAndRenderAdminLibrary()">
                         <select id="admin-filter-category" onchange="filterAndRenderAdminLibrary()"></select>
                     </div>
-                    <div id="library-preview-list" style="max-height: 350px; overflow-y: auto; font-size: 14px;"></div>
+                    <div id="library-preview-list" style="max-height: 350px; overflow-y: auto; font-size: 14px; padding-right:5px;"></div>
                 </div>
             </div>
 
             <!-- ADMIN TAB 3: ATTENDANCE & DIRECTORY -->
             <div id="tab-attendance-tracker" class="hidden">
                 <div class="box" style="border-left: 4px solid var(--admin-color);">
-                    <h3>👥 Choir Group Directory</h3>
+                    <h3 style="margin-bottom:15px;">👥 Choir Group Directory</h3>
                     <div class="filter-row">
                         <input type="text" id="new-member-name" placeholder="Type new member's full name...">
                         <button onclick="addNewChoirMember()" class="btn-admin" style="width:auto; margin:0; padding:0 20px;">+ Add</button>
                     </div>
-                    <div id="admin-directory-list" style="max-height: 150px; overflow-y: auto; font-size: 14px; background:#1a1a1a; padding:10px; border-radius:6px; border:1px solid #333;"></div>
+                    <div id="admin-directory-list" style="max-height: 150px; overflow-y: auto; font-size: 14px; background:rgba(10,12,20,0.4); padding:12px; border-radius:10px; border:1px solid var(--card-border);"></div>
                 </div>
 
                 <div class="box">
-                    <h3>Schedule a Mass / Service</h3>
+                    <h3 style="margin-bottom:15px;">Schedule a Mass / Service</h3>
                     <label>Mass Name:</label>
                     <input type="text" id="attend-mass-name" placeholder="e.g., Sunday Youth Mass 7:00 AM">
                     <label>Mass Date:</label>
                     <input type="text" id="attend-mass-date" placeholder="e.g., Sunday, May 31, 2026">
-                    <button onclick="createNewMass()" class="btn-attendance">Create Mass Schedule</button>
+                    <button onclick="createNewMass()" class="btn-attendance" style="width:100%;">Create Mass Schedule</button>
                 </div>
 
                 <div class="box">
-                    <h3>Active Mass Checklists</h3>
-                    <div id="admin-mass-list" style="max-height: 450px; overflow-y: auto;"></div>
+                    <h3 style="margin-bottom:15px;">Active Mass Checklists</h3>
+                    <div id="admin-mass-list" style="max-height: 450px; overflow-y: auto; padding-right:5px;"></div>
                 </div>
             </div>
         </div>
@@ -512,7 +607,7 @@
 
             choirMembers.forEach(member => {
                 const div = document.createElement('div');
-                div.style = "display:flex; justify-content:space-between; align-items:center; padding: 6px 0; border-bottom:1px solid #2a2a2a;";
+                div.style = "display:flex; justify-content:space-between; align-items:center; padding: 6px 0; border-bottom:1px solid rgba(255,255,255,0.04);";
                 div.innerHTML = `
                     <span>👤 ${member}</span>
                     <button class="btn-danger" style="padding:2px 6px; font-size:11px;" onclick="removeChoirMember('${member}')">Remove</button>
@@ -530,7 +625,8 @@
             document.getElementById('tab-member-library').classList.add('hidden');
             document.getElementById('tab-member-attendance').classList.add('hidden');
             
-            btnSunday.className = "btn-secondary"; btnLib.className = "btn-secondary"; btnAttend.className = "btn-secondary";
+            // Clean up old active classes safely
+            [btnSunday, btnLib, btnAttend].forEach(btn => btn.className = "");
 
             if (tab === 'sunday') {
                 document.getElementById('tab-member-sunday').classList.remove('hidden');
@@ -563,7 +659,7 @@
             container.innerHTML = "";
 
             if (!currentWorkingWeek.hymns || currentWorkingWeek.hymns.length === 0) {
-                container.innerHTML = `<p style="text-align:center; color:#888;">No hymns published yet.</p>`;
+                container.innerHTML = `<p style="text-align:center; color:var(--text-muted); margin: 20px 0;">No hymns published yet.</p>`;
                 return;
             }
 
@@ -607,7 +703,7 @@
             filtered.sort((a,b) => a.title.localeCompare(b.title));
 
             if (filtered.length === 0) {
-                container.innerHTML = `<p style="text-align:center; color:#888;">No matching songs found.</p>`;
+                container.innerHTML = `<p style="text-align:center; color:var(--text-muted); margin:20px 0;">No matching songs found.</p>`;
                 return;
             }
 
@@ -640,14 +736,14 @@
             container.innerHTML = "";
 
             if (scheduledMasses.length === 0) {
-                container.innerHTML = `<p style="text-align:center; color:#888;">No scheduled Masses found.</p>`;
+                container.innerHTML = `<p style="text-align:center; color:var(--text-muted); margin:20px 0;">No scheduled Masses found.</p>`;
                 return;
             }
 
             scheduledMasses.forEach(mass => {
                 const massBox = document.createElement('div');
                 massBox.className = "box";
-                massBox.innerHTML = `<h4>📅 ${mass.mass_name}</h4><p style="color:var(--accent-color); font-size:14px; margin-top:-10px;">${mass.mass_date}</p><hr style="border-color:#333;">`;
+                massBox.innerHTML = `<h4 style="margin-bottom:6px; font-size:18px;">📅 ${mass.mass_name}</h4><p style="color:var(--accent-color); font-size:14px; margin:0 0 16px 0; font-weight:500;">${mass.mass_date}</p><hr style="border:none; border-top:1px solid rgba(255,255,255,0.06); margin:0 0 8px 0;">`;
                 
                 choirMembers.forEach(member => {
                     const record = attendanceRecords.find(r => r.mass_id === mass.id && r.member_name === member);
@@ -722,7 +818,7 @@
             document.getElementById('tab-library-manager').classList.add('hidden');
             document.getElementById('tab-attendance-tracker').classList.add('hidden');
             
-            btnSunday.className = "btn-secondary"; btnLib.className = "btn-secondary"; btnAttend.className = "btn-secondary";
+            [btnSunday, btnLib, btnAttend].forEach(btn => btn.className = "");
 
             if (tabName === 'setlist') {
                 document.getElementById('tab-sunday-planner').classList.remove('hidden');
@@ -766,8 +862,8 @@
                 });
 
                 group.innerHTML = `
-                    <label style="font-weight: bold; color: var(--accent-color);">${index + 1}. ${section}:</label>
-                    <select id="select-${index}">${optionsHtml}</select>
+                    <label style="font-weight: 600; color: var(--accent-color);">${index + 1}. ${section}:</label>
+                    <select id="select-${index}" style="margin-bottom:0;">${optionsHtml}</select>
                 `;
                 formContainer.appendChild(group);
             });
@@ -819,23 +915,23 @@
             container.innerHTML = "";
 
             if (scheduledMasses.length === 0) {
-                container.innerHTML = `<p style="text-align:center; color:#888; padding:10px;">No scheduled masses listed.</p>`;
+                container.innerHTML = `<p style="text-align:center; color:var(--text-muted); padding:10px;">No scheduled masses listed.</p>`;
                 return;
             }
 
             scheduledMasses.forEach(mass => {
                 const massCard = document.createElement('div');
                 massCard.className = "box";
-                massCard.style.borderColor = "#444";
+                massCard.style.borderColor = "rgba(255,255,255,0.05)";
                 massCard.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 12px;">
                         <div>
-                            <h4 style="margin:0;">📅 ${mass.mass_name}</h4>
-                            <span style="font-size:12px; color:var(--accent-color);">${mass.mass_date}</span>
+                            <h4 style="margin:0; font-size:16px;">📅 ${mass.mass_name}</h4>
+                            <span style="font-size:12px; color:var(--accent-color); font-weight:500;">${mass.mass_date}</span>
                         </div>
                         <button onclick="deleteMass(${mass.id})" class="btn-danger">🗑️ Delete</button>
                     </div>
-                    <hr style="border-color:#333; margin:12px 0;">
+                    <hr style="border:none; border-top:1px solid rgba(255,255,255,0.06); margin:0 0 8px 0;">
                 `;
 
                 choirMembers.forEach(member => {
@@ -979,7 +1075,7 @@
             filteredList.sort((a, b) => a.title.localeCompare(b.title));
 
             if (filteredList.length === 0) {
-                container.innerHTML = `<p style="text-align:center; color:#888; padding: 10px;">No matching hymns found.</p>`;
+                container.innerHTML = `<p style="text-align:center; color:var(--text-muted); padding: 10px;">No matching hymns found.</p>`;
                 return;
             }
 
@@ -988,11 +1084,11 @@
                 item.className = "lib-item";
                 
                 let labels = "";
-                if(song.jc_no) labels += ` <span style="font-size:10px; background:#333; padding:1px 4px; border-radius:3px; color:#aaa">JC:${song.jc_no}</span>`;
-                if(song.jl_no) labels += ` <span style="font-size:10px; background:#333; padding:1px 4px; border-radius:3px; color:#aaa">JL:${song.jl_no}</span>`;
+                if(song.jc_no) labels += ` <span style="font-size:10px; background:rgba(10,12,20,0.5); padding:2px 6px; border-radius:4px; color:var(--text-muted); border:1px solid rgba(255,255,255,0.04);">JC:${song.jc_no}</span>`;
+                if(song.jl_no) labels += ` <span style="font-size:10px; background:rgba(10,12,20,0.5); padding:2px 6px; border-radius:4px; color:var(--text-muted); border:1px solid rgba(255,255,255,0.04);">JL:${song.jl_no}</span>`;
 
                 item.innerHTML = `
-                    <div><b>${song.title}</b>${labels}<br><span style="color:var(--library-color); font-size:11px;">${song.category}</span></div>
+                    <div><b style="color:#ffffff;">${song.title}</b>${labels}<br><span style="color:var(--library-color); font-size:12px; font-weight:500;">${song.category}</span></div>
                     <div class="lib-actions">
                         <button onclick="startEditHymn(${song.id})" class="btn-edit">✏️</button>
                         <button onclick="deleteHymn(${song.id})" class="btn-danger">🗑️</button>
