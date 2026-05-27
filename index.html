@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Choir Portal - Complete Attendance & Sync Hub</title>
+    <title>Choir Portal - Dynamic Roster & Sync Hub</title>
     <!-- Include the Supabase Cloud Library Script -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -94,12 +94,13 @@
         .form-row div { flex: 1; }
         .form-row label { font-size: 14px; color: #aaa; }
 
-        /* Attendance Checklist Styles */
         .attendance-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #333; }
         .attendance-status { font-weight: bold; padding: 4px 8px; border-radius: 4px; font-size: 13px; text-transform: uppercase;}
         .status-present { background: rgba(76, 175, 80, 0.2); color: #4caf50; border: 1px solid #4caf50; }
         .status-absent { background: rgba(244, 67, 54, 0.2); color: #f44336; border: 1px solid #f44336; }
         .attendance-toggle-btn { width: auto; margin: 0; padding: 6px 12px; font-size: 13px; }
+        
+        .member-action-row { background: #222; padding: 10px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #333; }
     </style>
 </head>
 <body>
@@ -148,9 +149,15 @@
                 <div id="member-library-render-area"></div>
             </div>
 
-            <!-- MEMBER TAB 3: ATTENDANCE ROSTER VIEW -->
+            <!-- MEMBER TAB 3: INTERACTIVE ATTENDANCE ROSTER VIEW -->
             <div id="tab-member-attendance" class="hidden">
                 <h3>Mass Attendance Roster</h3>
+                <div class="member-action-row">
+                    <label style="font-size: 14px; color: #aaa; font-weight: bold;">Select Your Name to Mark Attendance:</label>
+                    <select id="member-self-identity" onchange="renderMemberAttendance()">
+                        <option value="">-- Who are you? --</option>
+                    </select>
+                </div>
                 <div id="member-attendance-render-area"></div>
             </div>
         </div>
@@ -233,8 +240,18 @@
                 </div>
             </div>
 
-            <!-- ADMIN TAB 3: ATTENDANCE TRACKER -->
+            <!-- ADMIN TAB 3: ATTENDANCE & MEMBER DIRECTORY MANAGER -->
             <div id="tab-attendance-tracker" class="hidden">
+                <!-- NEW FEATURE BLOCK: Manage Choir Members Directly -->
+                <div class="box" style="border-left: 4px solid var(--admin-color);">
+                    <h3>👥 Choir Group Directory</h3>
+                    <div class="filter-row">
+                        <input type="text" id="new-member-name" placeholder="Type new member's full name...">
+                        <button onclick="addNewChoirMember()" class="btn-admin" style="width:auto; margin:0; padding:0 20px;">+ Add Member</button>
+                    </div>
+                    <div id="admin-directory-list" style="max-height: 150px; overflow-y: auto; font-size: 14px; background:#1a1a1a; padding:10px; border-radius:6px; border:1px solid #333;"></div>
+                </div>
+
                 <div class="box">
                     <h3>Schedule a Mass / Service</h3>
                     <label>Mass Name:</label>
@@ -262,9 +279,6 @@
         const MEMBER_KEY = "Choir2026";
         const ADMIN_KEY = "Admin2026";
 
-        // Pre-loaded roster of official choir members
-        const choirMembers = ["Ally", "Sheral", "Alyssa", "Rozanne", "Kalpita", "Stephanie"];
-
         const sectionsList = [
             "Entrance", "Lord have mercy", "Gloria", "Responsorial Psalms", 
             "Acclamation", "Offertry", "Holy Holy", "The Mystery of Faith", 
@@ -272,6 +286,7 @@
         ];
 
         let masterLibrary = [];
+        let choirMembers = []; // Now loads dynamically from the cloud database
         let week1Data = { date: "Loading...", hymns: [] };
         let week2Data = { date: "Loading...", hymns: [] };
         let scheduledMasses = [];
@@ -283,10 +298,12 @@
 
         async function initializeCloudConnection() {
             await fetchAllCloudData();
+            updateIdentitySelectorsUI();
             
             db.channel('cloud-sync')
                 .on('postgres_changes', { event: '*', schema: 'public' }, async () => {
                     await fetchAllCloudData();
+                    updateIdentitySelectorsUI();
                     if (!document.getElementById('member-dashboard').classList.contains('hidden')) {
                         renderMemberSetlist();
                         filterMemberLibrary();
@@ -295,12 +312,17 @@
                         filterAndRenderAdminLibrary();
                         generateAdminForm();
                         renderAdminAttendance();
+                        renderAdminDirectoryList();
                     }
                 })
                 .subscribe();
         }
 
         async function fetchAllCloudData() {
+            // Load Dynamic Members List from Cloud
+            let { data: members } = await db.from('choir_members_list').select('name').order('name', { ascending: true });
+            choirMembers = (members || []).map(m => m.name);
+
             let { data: lib } = await db.from('hymns_library').select('*');
             masterLibrary = lib || [];
             
@@ -312,12 +334,20 @@
                 if (w2) week2Data = { date: w2.sunday_date, hymns: w2.hymns_array };
             }
 
-            // Fetch attendance data blocks
             let { data: masses } = await db.from('attendance_masses').select('*').order('id', { ascending: false });
             scheduledMasses = masses || [];
 
             let { data: records } = await db.from('attendance_records').select('*');
             attendanceRecords = records || [];
+        }
+
+        function updateIdentitySelectorsUI() {
+            const selector = document.getElementById('member-self-identity');
+            if (!selector) return;
+            const currentSelected = selector.value;
+            selector.innerHTML = `<option value="">-- Who are you? --</option>` + 
+                choirMembers.map(m => `<option value="${m}">${m}</option>`).join('');
+            selector.value = currentSelected;
         }
 
         function handleLogin() {
@@ -333,10 +363,71 @@
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('member-dashboard').classList.remove('hidden');
                 setupCategoryDropdowns();
+                updateIdentitySelectorsUI();
                 switchMemberTab('sunday');
             } else {
                 document.getElementById('error-msg').classList.remove('hidden');
             }
+        }
+
+        // NEW ENGINE FUNCTION: Adds a new member to the cloud database
+        async function addNewChoirMember() {
+            const nameInput = document.getElementById('new-member-name').value.trim();
+            if (!nameInput) return alert("Please enter a member's name!");
+
+            let { error } = await db.from('choir_members_list').insert([{ name: nameInput }]);
+            if (error) {
+                if (error.code === '23505') return alert("This member name already exists in the choir!");
+                return alert("Database error adding member.");
+            }
+
+            // Automatically check them into any active masses as Absent initially
+            if (scheduledMasses.length > 0) {
+                const autoRecords = scheduledMasses.map(mass => {
+                    return { mass_id: mass.id, member_name: nameInput, status: "Absent" };
+                });
+                await db.from('attendance_records').insert(autoRecords);
+            }
+
+            document.getElementById('new-member-name').value = "";
+            alert(`${nameInput} has been officially added to the choir directory!`);
+            await fetchAllCloudData();
+            updateIdentitySelectorsUI();
+            renderAdminDirectoryList();
+            renderAdminAttendance();
+        }
+
+        // NEW ENGINE FUNCTION: Deletes a member from the directory
+        async function removeChoirMember(name) {
+            if (confirm(`Permanently remove ${name} from the choir group? This will clean up their attendance records.`)) {
+                await db.from('choir_members_list').delete().eq('name', name);
+                await db.from('attendance_records').delete().eq('member_name', name);
+                await fetchAllCloudData();
+                updateIdentitySelectorsUI();
+                renderAdminDirectoryList();
+                renderAdminAttendance();
+            }
+        }
+
+        function renderAdminDirectoryList() {
+            const container = document.getElementById('admin-directory-list');
+            if(!container) return;
+            container.innerHTML = "";
+
+            if (choirMembers.length === 0) {
+                container.innerHTML = `<p style="color:#888; text-align:center; margin:0;">No members in directory.</p>`;
+                return;
+            }
+
+            choirMembers.forEach(member => {
+                const div = document.createElement('div');
+                div.style = "display:flex; justify-content:space-between; align-items:center; padding: 6px 0; border-bottom:1px solid #2a2a2a;";
+                div.innerHTML = `
+                    <span>👤 ${member}</span>
+                    <button class="btn-danger" style="padding:2px 6px; font-size:11px;" onclick="removeChoirMember('${member}')">Remove</button>
+                `;
+                container.appendChild(div);
+            });
         }
 
         function switchMemberTab(tab) {
@@ -452,9 +543,9 @@
             });
         }
 
-        // RENDER: Choir members' attendance preview roster screen
         function renderMemberAttendance() {
             const container = document.getElementById('member-attendance-render-area');
+            const currentUser = document.getElementById('member-self-identity').value;
             container.innerHTML = "";
 
             if (scheduledMasses.length === 0) {
@@ -472,15 +563,38 @@
                     const status = record ? record.status : "Absent";
                     const statusClass = (status === "Present") ? "status-present" : "status-absent";
                     
-                    massBox.innerHTML += `
-                        <div class="attendance-row">
-                            <span>${member}</span>
-                            <span class="attendance-status ${statusClass}">${status}</span>
-                        </div>
-                    `;
+                    const row = document.createElement('div');
+                    row.className = "attendance-row";
+                    
+                    let actionHtml = `<span class="attendance-status ${statusClass}">${status}</span>`;
+                    if (member === currentUser) {
+                        actionHtml = `
+                            <div style="display:flex; gap:10px; align-items:center;">
+                                <span class="attendance-status ${statusClass}">${status}</span>
+                                <button class="btn-admin attendance-toggle-btn" onclick="memberToggleSelf(${mass.id}, '${member}', '${status}')">Change</button>
+                            </div>
+                        `;
+                    }
+
+                    row.innerHTML = `<span>${member}</span>${actionHtml}`;
+                    massBox.appendChild(row);
                 });
                 container.appendChild(massBox);
             });
+        }
+
+        async function memberToggleSelf(massId, memberName, currentStatus) {
+            const newStatus = (currentStatus === "Absent") ? "Present" : "Absent";
+            const existingRecord = attendanceRecords.find(r => r.mass_id === massId && r.member_name === memberName);
+
+            if (existingRecord) {
+                await db.from('attendance_records').update({ status: newStatus }).eq('id', existingRecord.id);
+            } else {
+                await db.from('attendance_records').insert([{ mass_id: massId, member_name: memberName, status: newStatus }]);
+            }
+
+            await fetchAllCloudData();
+            renderMemberAttendance();
         }
 
         function switchAdminWeek(weekKey) {
@@ -534,6 +648,7 @@
                 document.getElementById('tab-attendance-tracker').classList.remove('hidden');
                 btnAttend.className = "btn-attendance";
                 renderAdminAttendance();
+                renderAdminDirectoryList();
             }
         }
 
@@ -583,19 +698,15 @@
             }
         }
 
-        // ================= ATTENDANCE ACTIONS ENGINE =================
         async function createNewMass() {
             const name = document.getElementById('attend-mass-name').value.trim();
             const date = document.getElementById('attend-mass-date').value.trim();
 
             if (!name || !date) return alert("Please fill out Mass Name and Date!");
 
-            // 1. Insert Mass Row
             let { data: newMass, error } = await db.from('attendance_masses').insert([{ mass_name: name, mass_date: date }]).select().single();
-            
             if(error) return alert("Database error creating mass profile.");
 
-            // 2. Initialize default roster tracking states
             const recordsToInsert = choirMembers.map(member => {
                 return { mass_id: newMass.id, member_name: member, status: "Absent" };
             });
@@ -612,6 +723,7 @@
 
         function renderAdminAttendance() {
             const container = document.getElementById('admin-mass-list');
+            if(!container) return;
             container.innerHTML = "";
 
             if (scheduledMasses.length === 0) {
@@ -650,15 +762,12 @@
                     `;
                     massCard.appendChild(row);
                 });
-
                 container.appendChild(massCard);
             });
         }
 
         async function toggleAttendance(massId, memberName, currentStatus) {
             const newStatus = (currentStatus === "Absent") ? "Present" : "Absent";
-            
-            // Check if record exists
             const existingRecord = attendanceRecords.find(r => r.mass_id === massId && r.member_name === memberName);
 
             if (existingRecord) {
@@ -672,13 +781,12 @@
         }
 
         async function deleteMass(massId) {
-            if (confirm("Permanently delete this Mass profile and all its attendance records?")) {
+            if (confirm("Permanently delete this Mass profile?")) {
                 await db.from('attendance_masses').delete().eq('id', massId);
                 await fetchAllCloudData();
                 renderAdminAttendance();
             }
         }
-        // =============================================================
 
         async function addNewSongToLibrary() {
             const titleInput = document.getElementById('lib-new-title').value.trim();
