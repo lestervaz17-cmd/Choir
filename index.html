@@ -368,25 +368,37 @@
             }
         }
 
-        // DEFINITIVE CONTAINER-LEVEL APP INJECTION INTERFACE
+        // CORRECTED UNIVERSAL NETWORK NOTIFICATION ROUTER
         async function sendPushNotification(alertTitle, alertBody) {
-            console.log("Attempting notification handshake: " + alertTitle);
+            console.log("Broadcasting cloud alert message package...");
+            
+            const endpoint = "https://www.webintoapp.com/api/v2/push-notifications";
+            const payload = {
+                "app_id": "1367163",   
+                "api_key": "WgTyWltAZcowfJBQyPosaLIpsykAmIkg", 
+                "title": alertTitle,
+                "message": alertBody
+            };
 
-            // Intercept container settings when accessed from inside the built APK framework
+            // If triggered on a phone, use internal runtime parameters directly
             if (window.WIA_PushNotification) {
                 try {
-                    window.WIA_PushNotification.send({
-                        title: alertTitle,
-                        message: alertBody
-                    });
-                    console.log("Native notification pipeline verified and pushed successfully.");
-                } catch (err) {
-                    console.error("Native notification bridge encounter failure:", err);
-                }
-            } else {
-                // Secure fallback sandbox testing logic for regular computer web-browsers
-                console.log("Not inside the mobile APK wrap environment. Simulating broadcast data locally:");
-                console.log(`[ALERT PREVIEW] Title: ${alertTitle} | Body: ${alertBody}`);
+                    window.WIA_PushNotification.send({ title: alertTitle, message: alertBody });
+                    console.log("Pushed via inner native container framework.");
+                    return;
+                } catch(e) { console.log("Container inactive, shifting straight to global route..."); }
+            }
+
+            // If triggered from PC browser, push to WebIntoApp backend via open allorigins middleware
+            try {
+                await fetch("https://api.allorigins.win/raw?url=" + encodeURIComponent(endpoint), {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+                console.log("Global cloud broadcast packet cleanly dispatched.");
+            } catch (err) {
+                console.error("Cloud distribution gate failure:", err);
             }
         }
 
@@ -735,7 +747,7 @@
             
             alert("Mass scheduled and choir roster tracking initialized!");
             
-            // Invoke Native Container Push Engine
+            // Trigger Universal Cloud Notification
             sendPushNotification("New Mass Scheduled! 📅", `A new service "${name}" has been added. Open the roster to mark attendance!`);
             
             await fetchAllCloudData();
@@ -953,7 +965,7 @@
 
             alert("Setlist broadcast live to all devices!");
             
-            // Invoke Native Container Push Engine
+            // Trigger Universal Cloud Notification
             let weekLabel = (activeAdminWeek === 'week1') ? "Current Week" : "Next Week";
             sendPushNotification("Setlist Uploaded! 🎵", `The choir setlist for ${targetDate} (${weekLabel}) is live. Open the app to check lyrics!`);
             
