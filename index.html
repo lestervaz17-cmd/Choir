@@ -358,34 +358,26 @@
             }
         }
 
-        // NATIVE CORS-IMMUNE SCRIPT INJECTION ENGINE
+        // UNIVERSAL TELEGRAM ALERT DISPATCH PIPELINE
         function sendPushNotification(alertTitle, alertBody) {
-            console.log("Broadcasting notification via script injection channel...");
+            console.log("Routing choir alert over Telegram cloud bands...");
 
-            const appId = "1367163";
-            const apiKey = "WgTyWltAZcowfJBQyPosaLIpsykAmIkg";
-            
-            // Construct query parameters cleanly to avoid traditional preflight filters
-            const targetUrl = `https://www.webintoapp.com/api/v2/push-notifications` +
-                              `?app_id=${appId}` +
-                              `&api_key=${apiKey}` +
-                              `&title=${encodeURIComponent(alertTitle)}` +
-                              `&message=${encodeURIComponent(alertBody)}`;
+            // Paste your specific Telegram variables right here:
+            const BOT_TOKEN = "8916173626:AAG53Bj4AqMiR8XDZpKk7GMhnRjshQX4MZE"; 
+            const CHANNEL_ID = "-1003939482563"; 
 
-            // Create a runtime element to carry the query forward bypass-ready
+            if (BOT_TOKEN === "8916173626:AAG53Bj4AqMiR8XDZpKk7GMhnRjshQX4MZE") {
+                console.log("[SIMULATION MODE] Alert Package:", alertTitle, alertBody);
+                return;
+            }
+
+            const messageText = `⭐️ *${alertTitle}*\n\n${alertBody}`;
+            const directUrl = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHANNEL_ID}&text=${encodeURIComponent(messageText)}&parse_mode=Markdown`;
+
             const script = document.createElement('script');
-            script.src = targetUrl;
-            
-            script.onload = () => {
-                console.log("Notification packet successfully dropped onto distribution lanes.");
-                script.remove();
-            };
-            
-            script.onerror = (err) => {
-                console.error("Script gateway met a transport interruption.", err);
-                script.remove();
-            };
-
+            script.src = directUrl;
+            script.onload = () => { console.log("Telegram transmission complete."); script.remove(); };
+            script.onerror = () => { script.remove(); };
             document.body.appendChild(script);
         }
 
@@ -734,8 +726,8 @@
             
             alert("Mass scheduled and choir roster tracking initialized!");
             
-            // Trigger the Script Injection Notification
-            sendPushNotification("New Mass Scheduled! 📅", `A new service "${name}" has been added. Open the roster to mark attendance!`);
+            // Trigger Telegram Dispatcher
+            sendPushNotification("New Mass Scheduled! 📅", `A new service "${name}" has been added on ${date}. Open the roster app to mark attendance!`);
             
             await fetchAllCloudData();
             renderAdminAttendance();
@@ -952,9 +944,9 @@
 
             alert("Setlist broadcast live to all devices!");
             
-            // Trigger Script Injection Notification
+            // Trigger Telegram Notification
             let weekLabel = (activeAdminWeek === 'week1') ? "Current Week" : "Next Week";
-            sendPushNotification("Setlist Uploaded! 🎵", `The choir setlist for ${targetDate} (${weekLabel}) is live. Open the app to check lyrics!`);
+            sendPushNotification("Setlist Uploaded! 🎵", `The official choir setlist for *${targetDate}* (${weekLabel}) is live. Open your portal app to practice the lyrics!`);
             
             await fetchAllCloudData();
         }
