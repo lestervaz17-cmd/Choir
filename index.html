@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Samelpada Choir Portal 2.0</title>
+    <!-- Include the Supabase Cloud Library Script -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -263,7 +264,8 @@
 
     <div class="container">
         
-        <div id="login-screen" class="login-wrapper">
+        <!-- UPGRADED PERSONALIZED SECURITY TERMINAL -->
+        <div id="login-screen" class="login-wrapper hidden">
             <div class="login-icon">🎵</div>
             <h2>Choir App Portal</h2>
             <p>Sign in using your personal choir account</p>
@@ -282,6 +284,7 @@
             <p id="error-msg" style="color: #f87171; margin-top: 15px; font-size: 14px; font-weight: 500;" class="hidden">⚠️ Login failed. Check your email or password.</p>
         </div>
 
+        <!-- SCREEN 2: MEMBER DASHBOARD -->
         <div id="member-dashboard" class="hidden">
             <div class="nav-header">
                 <div>
@@ -297,6 +300,7 @@
                 <button id="btn-mem-attend" onclick="switchMemberTab('attendance')">📋 Roster</button>
             </div>
 
+            <!-- MEMBER TAB 1: SUNDAY SETLISTS -->
             <div id="tab-member-sunday" class="hidden">
                 <div class="week-toggle">
                     <button id="btn-mem-week1" onclick="switchMemberWeek('week1')" class="active-toggle">Current Week</button>
@@ -306,6 +310,7 @@
                 <div id="setlist-render-area"></div>
             </div>
 
+            <!-- MEMBER TAB 2: FULL LIBRARY -->
             <div id="tab-member-library" class="hidden">
                 <h3>Master Hymn Database</h3>
                 <div class="filter-row">
@@ -315,12 +320,14 @@
                 <div id="member-library-render-area"></div>
             </div>
 
+            <!-- MEMBER TAB 3: ATTENDANCE ROSTER -->
             <div id="tab-member-attendance" class="hidden">
                 <h3>Mass Attendance Roster</h3>
                 <div id="member-attendance-render-area"></div>
             </div>
         </div>
 
+        <!-- SCREEN 3: ADMIN DASHBOARD -->
         <div id="admin-dashboard" class="hidden">
             <div class="nav-header">
                 <div>
@@ -336,6 +343,7 @@
                 <button id="btn-adm-attend" onclick="switchAdminTab('attendance')">3. Attendance</button>
             </div>
             
+            <!-- ADMIN TAB 1: SUNDAY PLANNER -->
             <div id="tab-sunday-planner" class="hidden">
                 <div class="week-toggle">
                     <button id="btn-adm-week1" onclick="switchAdminWeek('week1')" class="active-toggle">Edit Current Week</button>
@@ -359,6 +367,7 @@
                 <button onclick="saveAdminData()" class="btn-admin" style="width:100%; font-size:16px; padding:14px;">Publish Selected Sunday Setlist</button>
             </div>
 
+            <!-- ADMIN TAB 2: LIBRARY MANAGER -->
             <div id="tab-library-manager" class="hidden">
                 <div class="box">
                     <h3 id="library-form-title" style="margin-bottom:20px;">Add New Song to Library</h3>
@@ -399,6 +408,7 @@
                 </div>
             </div>
 
+            <!-- ADMIN TAB 3: ATTENDANCE & DIRECTORY -->
             <div id="tab-attendance-tracker" class="hidden">
                 <div class="box" style="border-left: 4px solid var(--admin-color);">
                     <h3 style="margin-bottom:15px;">👥 Choir Group Directory</h3>
@@ -433,7 +443,7 @@
         
         const db = window.supabase.createClient(CLOUD_URL, CLOUD_KEY);
 
-        const ADMIN_EMAIL_MARKER = "admin@samelpadachoir.com"; // Change to your preferred admin email account
+        const ADMIN_EMAIL_MARKER = "admin@samelpadachoir.com";
 
         const sectionsList = [
             "Entrance", "Lord have mercy", "Gloria", "Responsorial Psalms", 
@@ -455,15 +465,26 @@
         let activeAdminWeek = "week1";
         let editingSongId = null;
 
-        // Fire login on Enter key tap
         document.getElementById('login-screen').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') handleLogin();
         });
 
+        // RE-ENGINEERED 100% RELIABLE LIVE CHANNEL BROADCAST LISTENER
         async function initializeCloudConnection() {
             await fetchAllCloudData();
             
-            // Re-listen over network websocket lines to capture edits
+            // CHECK FOR ACTIVE PRE-EXISTING LOCK SESSION FIRST
+            const { data: sessionData } = await db.auth.getSession();
+            
+            if (sessionData && sessionData.session) {
+                // Persistent User Verified -> Bypass Security Wall Automatically
+                loggedInUserEmail = sessionData.session.user.email;
+                routeToDashboard(loggedInUserEmail);
+            } else {
+                // No session found -> Unveil clean Login Gate
+                document.getElementById('login-screen').classList.remove('hidden');
+            }
+
             db.channel('cloud-sync')
                 .on('postgres_changes', { event: '*', schema: 'public', table: '*' }, async () => {
                     await fetchAllCloudData();
@@ -498,7 +519,6 @@
             attendanceRecords = records || [];
         }
 
-        // IDENTITY CORE: NATIVE SUPABASE ENCRYPTED HANDSHAKE
         async function handleLogin() {
             const emailInput = document.getElementById('login-email').value.trim();
             const passwordInput = document.getElementById('login-password').value.trim();
@@ -506,7 +526,6 @@
 
             if(!emailInput || !passwordInput) return alert("Please type your email and password!");
 
-            // Authenticate directly via Supabase Auth database vault
             const { data, error } = await db.auth.signInWithPassword({
                 email: emailInput,
                 password: passwordInput
@@ -518,16 +537,20 @@
             }
 
             loggedInUserEmail = data.user.email;
-            document.getElementById('login-screen').classList.add('hidden');
+            routeToDashboard(loggedInUserEmail);
+        }
 
-            // Routing condition depending on user profile markers
-            if (loggedInUserEmail.toLowerCase() === ADMIN_EMAIL_MARKER.toLowerCase()) {
+        // UNIFIED AUTOMATED ROUTING MATRIX
+        function routeToDashboard(email) {
+            document.getElementById('login-screen').classList.add('hidden');
+            
+            if (email.toLowerCase() === ADMIN_EMAIL_MARKER.toLowerCase()) {
                 document.getElementById('admin-dashboard').classList.remove('hidden');
                 setupCategoryDropdowns();
                 switchAdminTab('setlist');
             } else {
                 document.getElementById('member-dashboard').classList.remove('hidden');
-                document.getElementById('member-welcome').innerText = `👤 ${loggedInUserEmail}`;
+                document.getElementById('member-welcome').innerText = `👤 ${email.split('@')[0]}`;
                 setupCategoryDropdowns();
                 switchMemberTab('sunday');
             }
@@ -535,6 +558,7 @@
 
         function switchMemberTab(tab) {
             currentActiveTabMember = tab;
+            
             document.getElementById('tab-member-sunday').classList.add('hidden');
             document.getElementById('tab-member-library').classList.add('hidden');
             document.getElementById('tab-member-attendance').classList.add('hidden');
@@ -650,7 +674,6 @@
             });
         }
 
-        // AUTOMATED IDENTITY ROSTER RESOLUTION MAPPING
         function renderMemberAttendance() {
             const container = document.getElementById('member-attendance-render-area');
             container.innerHTML = "";
@@ -660,7 +683,6 @@
                 return;
             }
 
-            // Extract username alias mapping from login string directly
             const autoDetectedSingerName = loggedInUserEmail.split('@')[0];
 
             scheduledMasses.forEach(mass => {
@@ -678,7 +700,6 @@
                     
                     let actionHtml = `<span class="attendance-status ${statusClass}">${status}</span>`;
                     
-                    // Natively cross-reference matching database structures against current session
                     if (member.toLowerCase().trim() === autoDetectedSingerName.toLowerCase().trim()) {
                         actionHtml = `
                             <div style="display:flex; gap:10px; align-items:center;">
@@ -836,7 +857,7 @@
             }
 
             document.getElementById('new-member-name').value = "";
-            alert(`${nameInput} added to directory! Make sure to create their login account matching this spelling.`);
+            alert(`${nameInput} added to directory!`);
             await fetchAllCloudData();
             repaintVisibleAdminView();
         }
@@ -1066,8 +1087,9 @@
             await fetchAllCloudData();
         }
 
-        function logout() {
-            db.auth.signOut();
+        async function logout() {
+            await db.auth.signOut();
+            loggedInUserEmail = "";
             document.getElementById('login-email').value = "";
             document.getElementById('login-password').value = "";
             document.getElementById('admin-dashboard').classList.add('hidden');
