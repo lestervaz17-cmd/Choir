@@ -702,6 +702,8 @@
             const name = document.getElementById('attend-mass-name').value.trim();
             const date = document.getElementById('attend-mass-date').value.trim();
 
+            sendPushNotification("New Mass Scheduled! 📅", `A new service "${name}" has been added. Please mark your attendance!`);
+
             if (!name || !date) return alert("Please fill out Mass Name and Date!");
 
             let { data: newMass, error } = await db.from('attendance_masses').insert([{ mass_name: name, mass_date: date }]).select().single();
@@ -921,6 +923,8 @@
                     jc_no: matchedSong ? matchedSong.jc_no : "",
                     jl_no: matchedSong ? matchedSong.jl_no : "",
                     lyrics: matchedSong ? matchedSong.lyrics : "" 
+
+                    sendPushNotification("Setlist Uploaded! 🎵", `The setlist for ${targetDate} is now live. Open the app to view lyrics!`);
                 };
             });
 
@@ -934,6 +938,34 @@
             await fetchAllCloudData();
         }
 
+        async function sendPushNotification(alertTitle, alertBody) {
+    // Direct, universal cloud routing endpoint
+    const url = "https://fcm.googleapis.com/fcm/send";
+    
+    const payload = {
+        "to": "/topics/choir-alerts", 
+        "notification": {
+            "title": alertTitle,
+            "body": alertBody,
+            "sound": "default"
+        }
+    };
+
+    try {
+        await fetch(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                // Paste your long Firebase Server Key (from Step 2) directly here:
+                "Authorization": "key=PASTE_YOUR_LONG_FIREBASE_SERVER_KEY_HERE"
+            },
+            body: JSON.stringify(payload)
+        });
+        console.log("Push alert broadcast successfully sent via Firebase channel.");
+    } catch (err) {
+        console.error("Direct transmission pipeline error:", err);
+    }
+}
         function logout() {
             document.getElementById('password-input').value = "";
             document.getElementById('admin-dashboard').classList.add('hidden');
