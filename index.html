@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Samelpada Choir Portal 1.0</title>
-    <!-- Include the Supabase Cloud Library Script -->
+    <title>Samelpada Choir Portal 2.0</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -49,7 +48,7 @@
         
         /* Premium Attractive Glassmorphism Login Styling */
         .login-wrapper {
-            margin-top: 10vh;
+            margin-top: 8vh;
             background: var(--card-bg);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
@@ -59,10 +58,6 @@
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
             text-align: center;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        .login-wrapper:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6);
         }
         .login-icon {
             font-size: 46px;
@@ -84,24 +79,31 @@
             color: var(--text-muted);
             font-size: 15px;
         }
-        .login-input-wrapper {
-            position: relative;
-            margin-bottom: 20px;
+        .login-input-group {
+            text-align: left;
+            margin-bottom: 16px;
         }
-        .login-input-wrapper input {
+        .login-input-group label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--accent-color);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .login-input-group input {
             width: 100%;
             padding: 14px 16px;
             background: rgba(10, 12, 20, 0.6);
             border: 1px solid var(--card-border);
             border-radius: 12px;
             color: #ffffff;
-            font-size: 16px;
+            font-size: 15px;
             box-sizing: border-box;
             transition: all 0.2s ease;
-            text-align: center;
-            letter-spacing: 2px;
+            margin-top: 6px;
+            margin-bottom: 0;
         }
-        .login-input-wrapper input:focus {
+        .login-input-group input:focus {
             outline: none;
             border-color: var(--accent-color);
             background: rgba(10, 12, 20, 0.8);
@@ -118,6 +120,7 @@
             cursor: pointer;
             transition: all 0.2s ease;
             box-shadow: 0 4px 12px rgba(3, 105, 161, 0.3);
+            margin-top: 10px;
         }
         .login-btn:hover {
             box-shadow: 0 6px 20px rgba(3, 105, 161, 0.45);
@@ -144,7 +147,7 @@
             margin-top: 0;
         }
         
-        /* Premium Form Control Styling */
+        /* Premium Form Controls */
         input, textarea, select {
             width: 100%;
             padding: 12px 14px;
@@ -172,7 +175,7 @@
         }
         textarea { height: 110px; resize: vertical; }
         
-        /* Elite Button Systems */
+        /* Elite Buttons */
         button { 
             background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); 
             color: white; 
@@ -185,10 +188,7 @@
             transition: all 0.2s ease;
             box-shadow: 0 4px 12px rgba(3, 105, 161, 0.25);
         }
-        button:hover {
-            transform: translateY(-1px);
-            filter: brightness(1.1);
-        }
+        button:hover { transform: translateY(-1px); filter: brightness(1.1); }
         button:active { transform: translateY(1px); }
 
         .btn-admin { background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25); }
@@ -200,7 +200,7 @@
         .btn-edit { background: #f59e0b; padding: 6px 12px; width: auto; font-size: 13px; margin: 0 5px 0 0; box-shadow: none; }
         .btn-shift { background: linear-gradient(135deg, #db2777 0%, #be185d 100%); margin: 5px 0 20px 0; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(219, 39, 119, 0.25); }
         
-        /* Premium Interactive Tab Systems */
+        /* Interactive Tabs */
         .tab-buttons { 
             display: flex; 
             gap: 8px; 
@@ -211,14 +211,7 @@
             border: 1px solid rgba(255, 255, 255, 0.03);
         }
         .tab-buttons button { 
-            margin: 0; 
-            padding: 10px; 
-            font-size: 14px; 
-            flex: 1; 
-            box-shadow: none;
-            background: transparent;
-            color: var(--text-muted);
-            border-radius: 8px;
+            margin: 0; padding: 10px; font-size: 14px; flex: 1; box-shadow: none; background: transparent; color: var(--text-muted); border-radius: 8px;
         }
         .tab-buttons button.active-tab-adm-setlist { color: #ffffff; background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); }
         .tab-buttons button.active-tab-adm-library { color: #ffffff; background: linear-gradient(135deg, #9333ea 0%, #7e22ce 100%); }
@@ -232,40 +225,18 @@
         .week-toggle button { margin: 0; padding: 8px; font-size: 13px; background: transparent; color: var(--text-muted); box-shadow: none; flex: 1; border-radius: 6px;}
         .active-toggle { background: rgba(255, 255, 255, 0.08) !important; color: #ffffff !important; border: 1px solid rgba(255, 255, 255, 0.05); }
         
-        /* Elite Liturgical Hymn Cards */
+        /* Hymn Cards */
         .hymn-card {
-            background: rgba(255, 255, 255, 0.02);
-            margin: 14px 0;
-            padding: 18px;
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.04);
-            border-left: 4px solid var(--accent-color);
-            cursor: pointer;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(255, 255, 255, 0.02); margin: 14px 0; padding: 18px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.04); border-left: 4px solid var(--accent-color); cursor: pointer; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .hymn-card:hover {
-            background: rgba(255, 255, 255, 0.05);
-            transform: scale(1.01);
-            border-left-width: 6px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.25);
-        }
+        .hymn-card:hover { background: rgba(255, 255, 255, 0.05); transform: scale(1.01); border-left-width: 6px; box-shadow: 0 4px 20px rgba(0,0,0,0.25); }
         .hymn-card.lib-card { border-left-color: var(--library-color); }
         .hymn-section { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 1.5px; }
         .hymn-title { font-size: 20px; font-weight: 600; margin: 6px 0; color: #ffffff; }
         .hymn-meta { font-size: 13px; color: var(--text-muted); margin: 6px 0 0 0; display: flex; gap: 10px; }
         .meta-tag { background: rgba(10, 12, 20, 0.5); padding: 3px 8px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.05); font-weight: 500; font-size: 12px;}
         
-        .lyrics { 
-            margin-top: 14px; 
-            white-space: pre-line; 
-            color: #cbd5e1; 
-            line-height: 1.7; 
-            font-size: 16px; 
-            display: none; 
-            padding-top: 14px;
-            border-top: 1px solid rgba(255, 255, 255, 0.06);
-            animation: fadeIn 0.2s ease-out;
-        }
+        .lyrics { margin-top: 14px; white-space: pre-line; color: #cbd5e1; line-height: 1.7; font-size: 16px; display: none; padding-top: 14px; border-top: 1px solid rgba(255, 255, 255, 0.06); animation: fadeIn 0.2s ease-out; }
         .active .lyrics { display: block; }
         
         .nav-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); }
@@ -275,7 +246,7 @@
         .form-row { display: flex; gap: 12px; }
         .form-row div { flex: 1; }
 
-        /* Glowing Attendance Modules */
+        /* Attendance Badge Styling */
         .attendance-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
         .attendance-row span { font-weight: 500; }
         .attendance-status { font-weight: 600; padding: 4px 10px; border-radius: 6px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;}
@@ -285,31 +256,38 @@
         
         .lib-item { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.04); display: flex; justify-content: space-between; align-items: center; }
         .lib-actions { display: flex; align-items: center; }
-        .member-action-row { background: rgba(10, 12, 20, 0.3); padding: 16px; border-radius: 10px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.03); }
+        .user-welcome-badge { font-size:14px; color: var(--text-muted); background:rgba(255,255,255,0.03); padding:4px 10px; border-radius:20px; border:1px solid rgba(255,255,255,0.05); font-weight:500; }
     </style>
 </head>
 <body>
 
     <div class="container">
         
-        <!-- LOGIN PANEL -->
         <div id="login-screen" class="login-wrapper">
             <div class="login-icon">🎵</div>
             <h2>Choir App Portal</h2>
-            <p>Secure access for choir directory & roster panels</p>
+            <p>Sign in using your personal choir account</p>
             
-            <div class="login-input-wrapper">
-                <input type="password" id="password-input" placeholder="••••••••" autocomplete="current-password">
+            <div class="login-input-group">
+                <label>Email Address</label>
+                <input type="email" id="login-email" placeholder="name@domain.com" autocomplete="username">
+            </div>
+
+            <div class="login-input-group" style="margin-bottom:24px;">
+                <label>Private Password</label>
+                <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password">
             </div>
             
-            <button onclick="handleLogin()" class="login-btn">Enter Dashboard</button>
-            <p id="error-msg" style="color: #f87171; margin-top: 15px; font-size: 14px; font-weight: 500;" class="hidden">⚠️ Invalid access credentials. Try again.</p>
+            <button onclick="handleLogin()" class="login-btn" style="width:100%;">Sign In Securely</button>
+            <p id="error-msg" style="color: #f87171; margin-top: 15px; font-size: 14px; font-weight: 500;" class="hidden">⚠️ Login failed. Check your email or password.</p>
         </div>
 
-        <!-- SCREEN 2: MEMBER DASHBOARD -->
         <div id="member-dashboard" class="hidden">
             <div class="nav-header">
-                <h2 style="margin:0; font-size:24px;">Choir Portal</h2>
+                <div>
+                    <h2 style="margin:0; font-size:22px;">Choir Portal</h2>
+                    <span id="member-welcome" class="user-welcome-badge">Singer Mode</span>
+                </div>
                 <button onclick="logout()" class="btn-secondary" style="width: auto; margin: 0; padding: 6px 14px; font-size: 14px;">Exit</button>
             </div>
 
@@ -319,7 +297,6 @@
                 <button id="btn-mem-attend" onclick="switchMemberTab('attendance')">📋 Roster</button>
             </div>
 
-            <!-- MEMBER TAB 1: SUNDAY SETLISTS -->
             <div id="tab-member-sunday" class="hidden">
                 <div class="week-toggle">
                     <button id="btn-mem-week1" onclick="switchMemberWeek('week1')" class="active-toggle">Current Week</button>
@@ -329,7 +306,6 @@
                 <div id="setlist-render-area"></div>
             </div>
 
-            <!-- MEMBER TAB 2: FULL LIBRARY -->
             <div id="tab-member-library" class="hidden">
                 <h3>Master Hymn Database</h3>
                 <div class="filter-row">
@@ -339,21 +315,18 @@
                 <div id="member-library-render-area"></div>
             </div>
 
-            <!-- MEMBER TAB 3: ATTENDANCE ROSTER -->
             <div id="tab-member-attendance" class="hidden">
                 <h3>Mass Attendance Roster</h3>
-                <div class="member-action-row">
-                    <label style="font-weight: 600; display:block; margin-bottom:4px;">Select Your Name to Mark Attendance:</label>
-                    <select id="member-self-identity" onchange="renderMemberAttendance()" style="margin-bottom:0;"></select>
-                </div>
                 <div id="member-attendance-render-area"></div>
             </div>
         </div>
 
-        <!-- SCREEN 3: ADMIN DASHBOARD -->
         <div id="admin-dashboard" class="hidden">
             <div class="nav-header">
-                <h2 style="margin:0; font-size:24px;">Admin Control Center</h2>
+                <div>
+                    <h2 style="margin:0; font-size:22px;">Admin Center</h2>
+                    <span class="user-welcome-badge" style="color:var(--admin-color); border-color:rgba(74,222,128,0.2);">Master Director</span>
+                </div>
                 <button onclick="logout()" class="btn-secondary" style="width: auto; margin: 0; padding: 6px 14px; font-size: 14px;">Exit Admin</button>
             </div>
 
@@ -363,7 +336,6 @@
                 <button id="btn-adm-attend" onclick="switchAdminTab('attendance')">3. Attendance</button>
             </div>
             
-            <!-- ADMIN TAB 1: SUNDAY PLANNER -->
             <div id="tab-sunday-planner" class="hidden">
                 <div class="week-toggle">
                     <button id="btn-adm-week1" onclick="switchAdminWeek('week1')" class="active-toggle">Edit Current Week</button>
@@ -387,7 +359,6 @@
                 <button onclick="saveAdminData()" class="btn-admin" style="width:100%; font-size:16px; padding:14px;">Publish Selected Sunday Setlist</button>
             </div>
 
-            <!-- ADMIN TAB 2: LIBRARY MANAGER -->
             <div id="tab-library-manager" class="hidden">
                 <div class="box">
                     <h3 id="library-form-title" style="margin-bottom:20px;">Add New Song to Library</h3>
@@ -428,7 +399,6 @@
                 </div>
             </div>
 
-            <!-- ADMIN TAB 3: ATTENDANCE & DIRECTORY -->
             <div id="tab-attendance-tracker" class="hidden">
                 <div class="box" style="border-left: 4px solid var(--admin-color);">
                     <h3 style="margin-bottom:15px;">👥 Choir Group Directory</h3>
@@ -463,8 +433,7 @@
         
         const db = window.supabase.createClient(CLOUD_URL, CLOUD_KEY);
 
-        const MEMBER_KEY = "Choir2026";
-        const ADMIN_KEY = "Admin2026";
+        const ADMIN_EMAIL_MARKER = "admin@samelpadachoir.com"; // Change to your preferred admin email account
 
         const sectionsList = [
             "Entrance", "Lord have mercy", "Gloria", "Responsorial Psalms", 
@@ -479,40 +448,32 @@
         let scheduledMasses = [];
         let attendanceRecords = [];
 
+        let loggedInUserEmail = "";
         let currentActiveTabMember = "sunday";
         let currentActiveTabAdmin = "setlist";
         let activeMemberWeek = "week1";
         let activeAdminWeek = "week1";
         let editingSongId = null;
 
-        document.getElementById('password-input').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                handleLogin();
-            }
+        // Fire login on Enter key tap
+        document.getElementById('login-screen').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') handleLogin();
         });
 
-        // RE-ENGINEERED 100% RELIABLE LIVE CHANNEL BROADCAST LISTENER
         async function initializeCloudConnection() {
             await fetchAllCloudData();
-            updateIdentitySelectorsUI();
             
-            // Watch any system table event updates across the public layout dynamically
+            // Re-listen over network websocket lines to capture edits
             db.channel('cloud-sync')
-                .on('postgres_changes', { event: '*', schema: 'public', table: '*' }, async (payload) => {
-                    console.log("Database activity intercepted live:", payload);
+                .on('postgres_changes', { event: '*', schema: 'public', table: '*' }, async () => {
                     await fetchAllCloudData();
-                    updateIdentitySelectorsUI();
-                    
-                    // Repaint any currently open terminal views without requiring a screen reload
                     if (!document.getElementById('member-dashboard').classList.contains('hidden')) {
                         repaintVisibleMemberView();
                     } else if (!document.getElementById('admin-dashboard').classList.contains('hidden')) {
                         repaintVisibleAdminView();
                     }
                 })
-                .subscribe((status) => {
-                    console.log("Real-time synchronization engine state:", status);
-                });
+                .subscribe();
         }
 
         async function fetchAllCloudData() {
@@ -537,38 +498,43 @@
             attendanceRecords = records || [];
         }
 
-        function updateIdentitySelectorsUI() {
-            const selector = document.getElementById('member-self-identity');
-            if (!selector) return;
-            const currentSelected = selector.value;
-            selector.innerHTML = `<option value="">-- Who are you? --</option>` + 
-                choirMembers.map(m => `<option value="${m}">${m}</option>`).join('');
-            selector.value = currentSelected;
-        }
-
-        function handleLogin() {
-            const pin = document.getElementById('password-input').value.trim();
+        // IDENTITY CORE: NATIVE SUPABASE ENCRYPTED HANDSHAKE
+        async function handleLogin() {
+            const emailInput = document.getElementById('login-email').value.trim();
+            const passwordInput = document.getElementById('login-password').value.trim();
             document.getElementById('error-msg').classList.add('hidden');
 
-            if (pin === ADMIN_KEY) {
-                document.getElementById('login-screen').classList.add('hidden');
+            if(!emailInput || !passwordInput) return alert("Please type your email and password!");
+
+            // Authenticate directly via Supabase Auth database vault
+            const { data, error } = await db.auth.signInWithPassword({
+                email: emailInput,
+                password: passwordInput
+            });
+
+            if (error) {
+                document.getElementById('error-msg').classList.remove('hidden');
+                return;
+            }
+
+            loggedInUserEmail = data.user.email;
+            document.getElementById('login-screen').classList.add('hidden');
+
+            // Routing condition depending on user profile markers
+            if (loggedInUserEmail.toLowerCase() === ADMIN_EMAIL_MARKER.toLowerCase()) {
                 document.getElementById('admin-dashboard').classList.remove('hidden');
                 setupCategoryDropdowns();
                 switchAdminTab('setlist');
-            } else if (pin === MEMBER_KEY) {
-                document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('member-dashboard').classList.remove('hidden');
-                setupCategoryDropdowns();
-                updateIdentitySelectorsUI();
-                switchMemberTab('sunday');
             } else {
-                document.getElementById('error-msg').classList.remove('hidden');
+                document.getElementById('member-dashboard').classList.remove('hidden');
+                document.getElementById('member-welcome').innerText = `👤 ${loggedInUserEmail}`;
+                setupCategoryDropdowns();
+                switchMemberTab('sunday');
             }
         }
 
         function switchMemberTab(tab) {
             currentActiveTabMember = tab;
-            
             document.getElementById('tab-member-sunday').classList.add('hidden');
             document.getElementById('tab-member-library').classList.add('hidden');
             document.getElementById('tab-member-attendance').classList.add('hidden');
@@ -594,13 +560,9 @@
         }
 
         function repaintVisibleMemberView() {
-            if (currentActiveTabMember === 'sunday') {
-                renderMemberSetlist();
-            } else if (currentActiveTabMember === 'library') {
-                filterMemberLibrary();
-            } else if (currentActiveTabMember === 'attendance') {
-                renderMemberAttendance();
-            }
+            if (currentActiveTabMember === 'sunday') renderMemberSetlist();
+            else if (currentActiveTabMember === 'library') filterMemberLibrary();
+            else if (currentActiveTabMember === 'attendance') renderMemberAttendance();
         }
 
         function switchMemberWeek(weekKey) {
@@ -688,15 +650,18 @@
             });
         }
 
+        // AUTOMATED IDENTITY ROSTER RESOLUTION MAPPING
         function renderMemberAttendance() {
             const container = document.getElementById('member-attendance-render-area');
-            const currentUser = document.getElementById('member-self-identity').value;
             container.innerHTML = "";
 
             if (scheduledMasses.length === 0) {
                 container.innerHTML = `<p style="text-align:center; color:var(--text-muted); margin:20px 0;">No scheduled Masses found.</p>`;
                 return;
             }
+
+            // Extract username alias mapping from login string directly
+            const autoDetectedSingerName = loggedInUserEmail.split('@')[0];
 
             scheduledMasses.forEach(mass => {
                 const massBox = document.createElement('div');
@@ -712,7 +677,9 @@
                     row.className = "attendance-row";
                     
                     let actionHtml = `<span class="attendance-status ${statusClass}">${status}</span>`;
-                    if (member === currentUser) {
+                    
+                    // Natively cross-reference matching database structures against current session
+                    if (member.toLowerCase().trim() === autoDetectedSingerName.toLowerCase().trim()) {
                         actionHtml = `
                             <div style="display:flex; gap:10px; align-items:center;">
                                 <span class="attendance-status ${statusClass}">${status}</span>
@@ -744,7 +711,6 @@
 
         function switchAdminTab(tabName) {
             currentActiveTabAdmin = tabName;
-            
             document.getElementById('tab-sunday-planner').classList.add('hidden');
             document.getElementById('tab-library-manager').classList.add('hidden');
             document.getElementById('tab-attendance-tracker').classList.add('hidden');
@@ -771,25 +737,18 @@
         }
 
         function repaintVisibleAdminView() {
-            if (currentActiveTabAdmin === 'setlist') {
-                switchAdminWeek(activeAdminWeek);
-            } else if (currentActiveTabAdmin === 'library') {
-                filterAndRenderAdminLibrary();
-            } else if (currentActiveTabAdmin === 'attendance') {
-                renderAdminAttendance();
-                renderAdminDirectoryList();
-            }
+            if (currentActiveTabAdmin === 'setlist') switchAdminWeek(activeAdminWeek);
+            else if (currentActiveTabAdmin === 'library') filterAndRenderAdminLibrary();
+            else if (currentActiveTabAdmin === 'attendance') { renderAdminAttendance(); renderAdminDirectoryList(); }
         }
 
         function switchAdminWeek(weekKey) {
             activeAdminWeek = weekKey;
             document.getElementById('btn-adm-week1').className = (weekKey === 'week1') ? "active-toggle" : "";
             document.getElementById('btn-adm-week2').className = (weekKey === 'week2') ? "active-toggle" : "";
-            
             const shiftBtnBlock = document.getElementById('shift-action-container');
             if (weekKey === 'week2') shiftBtnBlock.classList.remove('hidden');
             else shiftBtnBlock.classList.add('hidden');
-
             generateAdminForm();
         }
 
@@ -835,10 +794,7 @@
             sectionsList.forEach((section, index) => {
                 const group = document.createElement('div');
                 group.className = "form-group";
-                
-                const filteredSongs = masterLibrary
-                    .filter(song => song.category === section)
-                    .sort((a, b) => a.title.localeCompare(b.title));
+                const filteredSongs = masterLibrary.filter(song => song.category === section).sort((a, b) => a.title.localeCompare(b.title));
 
                 let optionsHtml = `<option value="">-- Skip Section --</option>`;
                 filteredSongs.forEach(song => {
@@ -856,14 +812,8 @@
 
         async function shiftNextWeekToCurrent() {
             if (week2Data.hymns.length === 0) return alert("Next week's setlist is empty!");
-
             if (confirm("Are you sure you want to shift Next Week's setlist into Current Week?")) {
-                await db.from('schedules').upsert({ 
-                    week_key: "week1", 
-                    sunday_date: week2Data.date, 
-                    hymns_array: week2Data.hymns 
-                }, { onConflict: 'week_key' });
-
+                await db.from('schedules').upsert({ week_key: "week1", sunday_date: week2Data.date, hymns_array: week2Data.hymns }, { onConflict: 'week_key' });
                 alert("Success! Schedule pushed to Current Week.");
                 await fetchAllCloudData();
                 switchAdminWeek('week1');
@@ -881,14 +831,12 @@
             }
 
             if (scheduledMasses.length > 0) {
-                const autoRecords = scheduledMasses.map(mass => {
-                    return { mass_id: mass.id, member_name: nameInput, status: "Absent" };
-                });
+                const autoRecords = scheduledMasses.map(mass => { return { mass_id: mass.id, member_name: nameInput, status: "Absent" }; });
                 await db.from('attendance_records').insert(autoRecords);
             }
 
             document.getElementById('new-member-name').value = "";
-            alert(`${nameInput} added to directory!`);
+            alert(`${nameInput} added to directory! Make sure to create their login account matching this spelling.`);
             await fetchAllCloudData();
             repaintVisibleAdminView();
         }
@@ -915,10 +863,7 @@
             choirMembers.forEach(member => {
                 const div = document.createElement('div');
                 div.style = "display:flex; justify-content:space-between; align-items:center; padding: 6px 0; border-bottom:1px solid rgba(255,255,255,0.04);";
-                div.innerHTML = `
-                    <span>👤 ${member}</span>
-                    <button class="btn-danger" style="padding:2px 6px; font-size:11px;" onclick="removeChoirMember('${member}')">Remove</button>
-                `;
+                div.innerHTML = `<span>👤 ${member}</span><button class="btn-danger" style="padding:2px 6px; font-size:11px;" onclick="removeChoirMember('${member}')">Remove</button>`;
                 container.appendChild(div);
             });
         }
@@ -932,10 +877,7 @@
             let { data: newMass, error } = await db.from('attendance_masses').insert([{ mass_name: name, mass_date: date }]).select().single();
             if(error) return alert("Database error creating mass profile.");
 
-            const recordsToInsert = choirMembers.map(member => {
-                return { mass_id: newMass.id, member_name: member, status: "Absent" };
-            });
-
+            const recordsToInsert = choirMembers.map(member => { return { mass_id: newMass.id, member_name: member, status: "Absent" }; });
             await db.from('attendance_records').insert(recordsToInsert);
 
             document.getElementById('attend-mass-name').value = "";
@@ -1000,7 +942,6 @@
             } else {
                 await db.from('attendance_records').insert([{ mass_id: massId, member_name: memberName, status: newStatus }]);
             }
-            
             await fetchAllCloudData();
             repaintVisibleAdminView();
         }
@@ -1022,14 +963,7 @@
 
             if (!titleInput || !lyricsInput) return alert("Please fill out all fields!");
 
-            await db.from('hymns_library').insert([{ 
-                title: titleInput, 
-                category: categoryInput, 
-                jc_no: jcInput, 
-                jl_no: jlInput, 
-                lyrics: lyricsInput 
-            }]);
-            
+            await db.from('hymns_library').insert([{ title: titleInput, category: categoryInput, jc_no: jcInput, jl_no: jlInput, lyrics: lyricsInput }]);
             clearLibraryForm();
             await fetchAllCloudData();
             repaintVisibleAdminView();
@@ -1039,14 +973,12 @@
             const song = masterLibrary.find(s => s.id === id);
             if(!song) return;
             editingSongId = song.id;
-            
             document.getElementById('library-form-title').innerText = "✏️ Edit Existing Song";
             document.getElementById('lib-new-title').value = song.title;
             document.getElementById('lib-new-category').value = song.category;
             document.getElementById('lib-new-jc').value = song.jc_no || "";
             document.getElementById('lib-new-jl').value = song.jl_no || "";
             document.getElementById('lib-new-lyrics').value = song.lyrics;
-
             document.getElementById('btn-library-save').classList.add('hidden');
             document.getElementById('edit-action-block').classList.remove('hidden');
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1060,14 +992,7 @@
             const newJl = document.getElementById('lib-new-jl').value.trim();
             const newLyrics = document.getElementById('lib-new-lyrics').value.trim();
 
-            await db.from('hymns_library').update({ 
-                title: newTitle, 
-                category: newCategory, 
-                jc_no: newJc, 
-                jl_no: newJl, 
-                lyrics: newLyrics 
-            }).eq('id', editingSongId);
-            
+            await db.from('hymns_library').update({ title: newTitle, category: newCategory, jc_no: newJc, jl_no: newJl, lyrics: newLyrics }).eq('id', editingSongId);
             cancelLibraryEdit();
             await fetchAllCloudData();
             repaintVisibleAdminView();
@@ -1104,11 +1029,8 @@
             container.innerHTML = "";
 
             let filteredList = masterLibrary.filter(song => {
-                const matchesSearch = song.title.toLowerCase().includes(searchQuery);
-                const matchesCategory = (categoryFilter === "ALL" || song.category === categoryFilter);
-                return matchesSearch && matchesCategory;
+                return song.title.toLowerCase().includes(searchQuery) && (categoryFilter === "ALL" || song.category === categoryFilter);
             });
-
             filteredList.sort((a, b) => a.title.localeCompare(b.title));
 
             if (filteredList.length === 0) {
@@ -1119,17 +1041,13 @@
             filteredList.forEach((song) => {
                 const item = document.createElement('div');
                 item.className = "lib-item";
-                
                 let labels = "";
                 if(song.jc_no) labels += ` <span style="font-size:10px; background:rgba(10,12,20,0.5); padding:2px 6px; border-radius:4px; color:var(--text-muted); border:1px solid rgba(255,255,255,0.04);">JC:${song.jc_no}</span>`;
                 if(song.jl_no) labels += ` <span style="font-size:10px; background:rgba(10,12,20,0.5); padding:2px 6px; border-radius:4px; color:var(--text-muted); border:1px solid rgba(255,255,255,0.04);">JL:${song.jl_no}</span>`;
 
                 item.innerHTML = `
                     <div><b style="color:#ffffff;">${song.title}</b>${labels}<br><span style="color:var(--library-color); font-size:12px; font-weight:500;">${song.category}</span></div>
-                    <div class="lib-actions">
-                        <button onclick="startEditHymn(${song.id})" class="btn-edit">✏️</button>
-                        <button onclick="deleteHymn(${song.id})" class="btn-danger">🗑️</button>
-                    </div>
+                    <div class="lib-actions"><button onclick="startEditHymn(${song.id})" class="btn-edit">✏️</button><button onclick="deleteHymn(${song.id})" class="btn-danger">🗑️</button></div>
                 `;
                 container.appendChild(item);
             });
@@ -1140,34 +1058,25 @@
             const compiledHymns = sectionsList.map((section, index) => {
                 const selectedTitle = document.getElementById(`select-${index}`).value;
                 const matchedSong = masterLibrary.find(s => s.title === selectedTitle);
-                return { 
-                    section: section, 
-                    title: selectedTitle, 
-                    jc_no: matchedSong ? matchedSong.jc_no : "",
-                    jl_no: matchedSong ? matchedSong.jl_no : "",
-                    lyrics: matchedSong ? matchedSong.lyrics : "" 
-                };
+                return { section: section, title: selectedTitle, jc_no: matchedSong ? matchedSong.jc_no : "", jl_no: matchedSong ? matchedSong.jl_no : "", lyrics: matchedSong ? matchedSong.lyrics : "" };
             });
 
-            await db.from('schedules').upsert({ 
-                week_key: activeAdminWeek, 
-                sunday_date: targetDate, 
-                hymns_array: compiledHymns 
-            }, { onConflict: 'week_key' });
-
+            await db.from('schedules').upsert({ week_key: activeAdminWeek, sunday_date: targetDate, hymns_array: compiledHymns }, { onConflict: 'week_key' });
             alert("Setlist broadcast live to all devices!");
             await fetchAllCloudData();
         }
 
         function logout() {
-            document.getElementById('password-input').value = "";
+            db.auth.signOut();
+            document.getElementById('login-email').value = "";
+            document.getElementById('login-password').value = "";
             document.getElementById('admin-dashboard').classList.add('hidden');
             document.getElementById('member-dashboard').classList.add('hidden');
             document.getElementById('login-screen').classList.remove('hidden');
         }
 
         window.onload = function() {
-            initializeCloudConnection().catch(err => console.log("Cloud connection waiting...", err));
+            initializeCloudConnection().catch(err => console.log("Cloud connection initializing...", err));
         };
     </script>
 </body>
